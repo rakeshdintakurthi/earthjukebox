@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Thermophone Earth</title>
+
+  <!-- CesiumJS Pinned Library -->
+  <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Widgets/widgets.css"
+        onerror="this.onerror=null; this.href='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css';">
+  <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"
+          onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js';"></script>
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --surface: #1f1f23;
+      --surface-2: #2a2a2f;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --accent: #8ab4f8;
+      --accent-hover: #aecbfa;
+      --border: rgba(255, 255, 255, 0.08);
+      --font: "Google Sans", Roboto, Inter, system-ui, -apple-system, sans-serif;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --radius: 12px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #000000;
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 13px;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Full-bleed Cesium container */
+    #cesium {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Restyle Cesium legal credits to be small and muted */
+    .cesium-widget-credits {
+      font-size: 10px !important;
+      color: rgba(255, 255, 255, 0.45) !important;
+      position: absolute !important;
+      bottom: 6px !important;
+      right: 12px !important;
+      left: auto !important;
+      background: transparent !important;
+      pointer-events: auto !important;
+      z-index: 20 !important;
+    }
+    .cesium-widget-credits a {
+      color: rgba(255, 255, 255, 0.55) !important;
+      text-decoration: none !important;
+    }
+
+    /* Common floating container */
+    .floating-ui {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      border-radius: var(--radius);
+      z-index: 50;
+    }
+
+    /* Top-left floating bar */
+    .top-bar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      height: 48px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      padding: 0 8px 0 16px;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--accent);
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 180px;
+      height: 36px;
+      border-radius: 18px;
+      background-color: var(--surface-2);
+      border: 1px solid transparent;
+      color: var(--text);
+      padding: 0 12px 0 32px;
+      font-family: var(--font);
+      font-size: 13px;
+      outline: none;
+      transition: width 0.2s, border-color 0.2s;
+    }
+
+    .search-input:focus {
+      width: 230px;
+      border-color: var(--accent);
+    }
+
+    .search-input::placeholder {
+      color: var(--muted);
+    }
+
+    .search-msg {
+      position: absolute;
+      top: 44px;
+      left: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      white-space: nowrap;
+      display: none;
+      z-index: 60;
+    }
+
+    .bar-divider {
+      width: 1px;
+      height: 24px;
+      background-color: var(--border);
+    }
+
+    /* Icon button */
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 18px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .icon-btn:hover {
+      background-color: var(--surface-2);
+      color: var(--text);
+    }
+
+    .icon-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    /* Layers Popover */
+    .popover-anchor {
+      position: relative;
+    }
+
+    .layers-popover {
+      position: absolute;
+      top: 44px;
+      right: 0;
+      min-width: 220px;
+      padding: 14px 16px;
+      display: none;
+    }
+
+    .pop-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 12px;
+    }
+
+    .pop-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+
+    .pop-check input[type="checkbox"] {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .pop-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 10px 0 6px 0;
+    }
+
+    .segmented {
+      display: flex;
+      background-color: var(--surface-2);
+      border-radius: 14px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .seg-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font);
+      font-size: 12px;
+      padding: 4px 6px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .seg-btn.active {
+      background-color: var(--surface);
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    /* Bottom-Right 40px Round Controls */
+    .side-stack {
+      position: absolute;
+      right: 16px;
+      bottom: 36px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 45;
+    }
+
+    .round-btn-40 {
+      width: 40px;
+      height: 40px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background-color: var(--surface);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      transition: background-color 0.15s, color 0.15s;
+    }
+
+    .round-btn-40:hover {
+      background-color: var(--surface-2);
+      color: var(--text);
+    }
+
+    .round-btn-40:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 1px;
+    }
+
+    /* Bottom-Left Altitude Card */
+    .altitude-card {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      padding: 8px 14px;
+      font-size: 12px;
+      z-index: 45;
+    }
+
+    .altitude-card strong {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    /* Click Place Info Card */
+    .place-card {
+      position: absolute;
+      top: 72px;
+      left: 12px;
+      width: 280px;
+      padding: 14px 16px;
+      display: none;
+      z-index: 60;
+    }
+
+    .place-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .place-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .place-close {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px;
+    }
+
+    .place-close:hover {
+      color: var(--text);
+    }
+
+    .place-coords {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .place-elev {
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    /* Floating Toast */
+    .toast {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 8px 18px;
+      font-size: 12px;
+      color: var(--text);
+      box-shadow: var(--shadow);
+      display: none;
+      z-index: 100;
+    }
+
+    /* Error Fallback Banner */
+    #cesium-error {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #7f1d1d;
+      color: #fef2f2;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 999;
+      display: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fallback notification -->
+  <div id="cesium-error" role="alert">CesiumJS could not load. Check your network or the CDN URL.</div>
+
+  <!-- Cesium 3D Globe Container -->
+  <div id="cesium" role="region" aria-label="Cesium 3D Earth Globe"></div>
+
+  <!-- Top-left floating bar (Google Earth style) -->
+  <header class="top-bar floating-ui" role="toolbar" aria-label="Main toolbar">
+    <div class="brand">
+      <span class="brand-dot" aria-hidden="true"></span>
+      <span class="brand-title">Thermophone Earth</span>
+    </div>
+
+    <div class="search-box">
+      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input id="search-input" type="search" class="search-input" placeholder="Search places" autocomplete="off" spellcheck="false" aria-label="Search places">
+      <div id="search-msg" class="search-msg" aria-live="polite"></div>
+    </div>
+
+    <div class="bar-divider" aria-hidden="true"></div>
+
+    <div class="popover-anchor">
+      <button id="btn-layers" class="icon-btn" aria-label="Layers" aria-expanded="false" aria-haspopup="true" title="Layers">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+          <polyline points="2 17 12 22 22 17"/>
+          <polyline points="2 12 12 17 22 12"/>
+        </svg>
+      </button>
+
+      <!-- Layers Popover -->
+      <div id="layers-popover" class="layers-popover floating-ui" role="dialog" aria-label="Layer settings">
+        <div class="pop-title">Map Layers</div>
+        <label class="pop-check">
+          <input type="checkbox" id="check-labels" checked>
+          <span>Labels &amp; borders</span>
+        </label>
+        <label class="pop-check">
+          <input type="checkbox" id="check-roads" checked>
+          <span>Roads (zoom &lt; 400 km)</span>
+        </label>
+        <label class="pop-check">
+          <input type="checkbox" id="check-lighting" checked>
+          <span>Day/night shading</span>
+        </label>
+
+        <div class="pop-label">Terrain exaggeration</div>
+        <div class="segmented" role="radiogroup" aria-label="Terrain exaggeration">
+          <button class="seg-btn" data-exag="1.0" role="radio" aria-checked="false">1.0</button>
+          <button class="seg-btn active" data-exag="1.3" role="radio" aria-checked="true">1.3</button>
+          <button class="seg-btn" data-exag="2.0" role="radio" aria-checked="false">2.0</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Bottom-right stack of 40px round buttons -->
+  <div class="side-stack" role="group" aria-label="Navigation controls">
+    <button id="btn-zoom-in" class="round-btn-40" aria-label="Zoom in (+)" title="Zoom in (+)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+    <button id="btn-zoom-out" class="round-btn-40" aria-label="Zoom out (-)" title="Zoom out (-)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button>
+    <button id="btn-reset-north" class="round-btn-40" aria-label="Reset North" title="Reset North">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polygon points="12 2 19 21 12 17 5 21 12 2" fill="var(--accent)" stroke="none"/>
+      </svg>
+    </button>
+    <button id="btn-reset-view" class="round-btn-40" aria-label="Reset View" title="Reset View">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"/>
+        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Bottom-left Altitude Card -->
+  <div id="altitude-card" class="altitude-card floating-ui" aria-live="polite">
+    <span id="altitude-readout"><strong>19,000 km</strong> &bull; <span class="muted">Planet</span></span>
+  </div>
+
+  <!-- Click Place Info Card -->
+  <aside id="place-card" class="place-card floating-ui" role="dialog" aria-label="Selected Location Info">
+    <div class="place-header">
+      <div id="place-title" class="place-title">Selected Location</div>
+      <button id="place-close" class="place-close" aria-label="Close card (Esc)">&times;</button>
+    </div>
+    <div id="place-coords" class="place-coords">0.0000°, 0.0000°</div>
+    <div id="place-elev" class="place-elev">Loading elevation...</div>
+  </aside>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast" role="alert" aria-atomic="true"></div>
+
+  <script>
+    // ========================================================================
+    // CONFIGURATION
+    // ========================================================================
+    const ION_TOKEN = ''; // optional free Cesium ion token (ion.cesium.com). If set: Cesium World Terrain + Bing aerial imagery. If empty: token-free Esri imagery and flat terrain.
+    let TERRAIN_EXAGGERATION = 1.3;
+
+    // Verify CesiumJS availability
+    if (typeof Cesium === 'undefined') {
+      document.getElementById('cesium-error').style.display = 'block';
+      throw new Error("CesiumJS is not available.");
+    }
+
+    if (ION_TOKEN) {
+      Cesium.Ion.defaultAccessToken = ION_TOKEN;
+    }
+
+    // ========================================================================
+    // 1) VIEWER INITIALIZATION
+    // ========================================================================
+    const START_DESTINATION = Cesium.Cartesian3.fromDegrees(60, 25, 1.9e7);
+
+    const viewer = new Cesium.Viewer('cesium', {
+      animation: false,
+      timeline: false,
+      geocoder: false,
+      homeButton: false,
+      sceneModePicker: false,
+      baseLayerPicker: false,
+      navigationHelpButton: false,
+      fullscreenButton: false,
+      infoBox: false,
+      selectionIndicator: false,
+      baseLayer: false,
+      terrain: ION_TOKEN ? Cesium.Terrain.fromWorldTerrain() : undefined,
+      requestRenderMode: false
+    });
+
+    const scene = viewer.scene;
+    const globe = scene.globe;
+
+    // Viewport Resolution & Anti-Aliasing
+    viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2);
+    if (scene.msaaSamples !== undefined) scene.msaaSamples = 4;
+    if (scene.postProcessStages && scene.postProcessStages.fxaa) {
+      scene.postProcessStages.fxaa.enabled = true;
+    }
+
+    // ========================================================================
+    // 2) IMAGERY LAYERS
+    // ========================================================================
+    let baseLayer = null;
+    let roadsLayer = null;
+    let labelsLayer = null;
+    let baseErrorCount = 0;
+    let hasShownBaseErrorToast = false;
+    let isRoadsEnabled = true;
+
+    async function initImageryLayers() {
+      // 1. Base Layer (Satellite)
+      if (ION_TOKEN) {
+        try {
+          baseLayer = await Cesium.ImageryLayer.fromWorldImagery({
+            style: Cesium.IonWorldImageryStyle.AERIAL
+          });
+          viewer.imageryLayers.add(baseLayer);
+        } catch (e) {
+          console.warn("Ion imagery failed, falling back to Esri:", e);
+        }
+      }
+
+      if (!baseLayer) {
+        const esriProvider = new Cesium.UrlTemplateImageryProvider({
+          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+          maximumLevel: 19,
+          credit: 'Esri, Maxar, Earthstar Geographics'
+        });
+
+        esriProvider.errorEvent.addEventListener(() => {
+          baseErrorCount++;
+          if (baseErrorCount >= 20 && !hasShownBaseErrorToast) {
+            hasShownBaseErrorToast = true;
+            showToast("Satellite imagery could not load.");
+          }
+        });
+
+        baseLayer = new Cesium.ImageryLayer(esriProvider);
+        viewer.imageryLayers.add(baseLayer);
+      }
+
+      baseLayer.saturation = 1.15;
+      baseLayer.brightness = 1.0;
+      globe.baseColor = Cesium.Color.fromCssColorString('#0b1b33');
+
+      // 2. Roads Overlay (shown only when height < 400 km)
+      const roadsProvider = new Cesium.UrlTemplateImageryProvider({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+        maximumLevel: 19
+      });
+      roadsProvider.errorEvent.addEventListener(() => {});
+      roadsLayer = new Cesium.ImageryLayer(roadsProvider);
+      roadsLayer.show = false;
+      viewer.imageryLayers.add(roadsLayer);
+
+      // 3. Labels and Borders Overlay (Always on by default)
+      const labelsProvider = new Cesium.UrlTemplateImageryProvider({
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        maximumLevel: 19
+      });
+      labelsProvider.errorEvent.addEventListener(() => {});
+      labelsLayer = new Cesium.ImageryLayer(labelsProvider);
+      labelsLayer.alpha = 1.0;
+      labelsLayer.show = true;
+      viewer.imageryLayers.add(labelsLayer);
+    }
+
+    initImageryLayers();
+
+    // ========================================================================
+    // 3) REALISTIC SPACE LOOK & LIGHTING
+    // ========================================================================
+    scene.skyAtmosphere.show = true;
+    globe.showGroundAtmosphere = true;
+    scene.moon.show = false;
+    scene.sun.show = false;
+    scene.backgroundColor = Cesium.Color.BLACK;
+
+    // Day/night shading fixed on Asia, Africa and Europe
+    globe.enableLighting = true;
+    viewer.clock.currentTime = Cesium.JulianDate.fromIso8601('2026-06-21T09:00:00Z');
+    viewer.clock.shouldAnimate = false;
+
+    // Fade lighting out as camera descends below ~3,000 km for even landscape illumination
+    globe.lightingFadeInDistance = 9000000.0;  // 9,000 km
+    globe.lightingFadeOutDistance = 3000000.0; // 3,000 km
+    globe.dynamicAtmosphereLighting = true;
+    globe.dynamicAtmosphereLightingFromSun = true;
+
+    globe.maximumScreenSpaceError = 1.5;
+    globe.tileCacheSize = 300;
+    globe.preloadSiblings = true;
+    globe.depthTestAgainstTerrain = true;
+    scene.verticalExaggeration = TERRAIN_EXAGGERATION;
+
+    // 3D Buildings when Ion Token is set
+    if (ION_TOKEN && typeof Cesium.createOsmBuildingsAsync === 'function') {
+      Cesium.createOsmBuildingsAsync().then(osmBuildings => {
+        scene.primitives.add(osmBuildings);
+        viewer.camera.changed.addEventListener(() => {
+          osmBuildings.show = viewer.camera.positionCartographic.height < 30000; // < 30 km
+        });
+      }).catch(err => console.warn("OSM buildings unavailable:", err));
+    }
+
+    // ========================================================================
+    // 4) CAMERA & NAVIGATION
+    // ========================================================================
+    viewer.camera.setView({ destination: START_DESTINATION });
+
+    const controller = scene.screenSpaceCameraController;
+    controller.minimumZoomDistance = 40;
+    controller.maximumZoomDistance = 4.0e7;
+    controller.inertiaZoom = 0.85;
+    controller.inertiaSpin = 0.9;
+    controller.enableCollisionDetection = true;
+    controller.enableZoom = true;
+
+    // Double-click flies in toward clicked position at 40% height
+    const screenHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
+    screenHandler.setInputAction((click) => {
+      const cartesian = scene.pickPosition(click.position) || viewer.camera.pickEllipsoid(click.position, globe.ellipsoid);
+      if (cartesian) {
+        const carto = Cesium.Cartographic.fromCartesian(cartesian);
+        const curHeight = viewer.camera.positionCartographic.height;
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, curHeight * 0.4),
+          duration: 1.2
+        });
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
+
+    // Slow auto-rotate when far out (> 12,000 km) and inactive
+    let lastUserAction = Date.now();
+    const markActive = () => { lastUserAction = Date.now(); };
+    scene.canvas.addEventListener('pointerdown', markActive);
+    scene.canvas.addEventListener('wheel', markActive);
+    window.addEventListener('keydown', markActive);
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    viewer.clock.onTick.addEventListener(() => {
+      if (prefersReducedMotion) return;
+      const h = viewer.camera.positionCartographic.height;
+      if (h > 1.2e7 && (Date.now() - lastUserAction > 3500)) {
+        viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, 0.00015);
+      }
+    });
+
+    // Altitude readout & roads layer toggle on camera changed
+    viewer.camera.changed.addEventListener(() => {
+      const height = viewer.camera.positionCartographic.height;
+      if (roadsLayer) {
+        roadsLayer.show = isRoadsEnabled && (height < 400000); // 400 km
+      }
+      updateAltitudeCard(height);
+    });
+
+    function updateAltitudeCard(height) {
+      const km = height / 1000;
+      let level = '';
+      if (km > 5000) level = 'Planet';
+      else if (km >= 500) level = 'Continent';
+      else if (km >= 50) level = 'Country';
+      else if (km >= 5) level = 'Region';
+      else if (km >= 0.5) level = 'City';
+      else level = 'Street';
+
+      const formatted = km >= 1 ? `${Math.round(km).toLocaleString()} km` : `${Math.round(height).toLocaleString()} m`;
+      const el = document.getElementById('altitude-readout');
+      if (el) {
+        el.innerHTML = `<strong>${formatted}</strong> &bull; <span class="muted">${level}</span>`;
+      }
+    }
+
+    // ========================================================================
+    // 5) CLICK INSPECTOR & PINS
+    // ========================================================================
+    const pinBuilder = new Cesium.PinBuilder();
+    let pinEntity = null;
+    const nominatimReverseCache = new Map();
+    let lastReverseTime = 0;
+
+    screenHandler.setInputAction(async (click) => {
+      const cartesian = scene.pickPosition(click.position) || viewer.camera.pickEllipsoid(click.position, globe.ellipsoid);
+      if (!cartesian) return;
+
+      const carto = Cesium.Cartographic.fromCartesian(cartesian);
+      const lat = Cesium.Math.toDegrees(carto.latitude);
+      const lon = Cesium.Math.toDegrees(carto.longitude);
+
+      // Add or move teardrop pin (white fill 48px)
+      if (pinEntity) {
+        pinEntity.position = cartesian;
+        pinEntity.show = true;
+      } else {
+        pinEntity = viewer.entities.add({
+          position: cartesian,
+          billboard: {
+            image: pinBuilder.fromColor(Cesium.Color.WHITE, 48),
+            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
+            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
+          }
+        });
+      }
+
+      showPlaceCard(lat, lon, carto);
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    async function showPlaceCard(lat, lon, carto) {
+      const card = document.getElementById('place-card');
+      const titleEl = document.getElementById('place-title');
+      const coordsEl = document.getElementById('place-coords');
+      const elevEl = document.getElementById('place-elev');
+
+      coordsEl.textContent = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(4)}°${lon >= 0 ? 'E' : 'W'}`;
+      titleEl.textContent = "Loading place...";
+      elevEl.textContent = "Measuring elevation...";
+      card.style.display = 'block';
+
+      // Reverse geocode place name
+      reverseGeocode(lat, lon).then(name => {
+        titleEl.textContent = name || "Selected Location";
+      });
+
+      // Sample terrain elevation
+      if (ION_TOKEN && viewer.terrainProvider && !(viewer.terrainProvider instanceof Cesium.EllipsoidTerrainProvider)) {
+        try {
+          const sampled = await Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, [carto]);
+          if (sampled && sampled[0] && sampled[0].height !== undefined) {
+            elevEl.textContent = `Elevation: ${Math.round(sampled[0].height)} m`;
+          } else {
+            elevEl.textContent = "Elevation: 0 m";
+          }
+        } catch (e) {
+          elevEl.textContent = "Elevation: 0 m";
+        }
+      } else {
+        elevEl.textContent = "Flat terrain: add a Cesium ion token for elevation";
+      }
+    }
+
+    async function reverseGeocode(lat, lon) {
+      const key = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+      if (nominatimReverseCache.has(key)) return nominatimReverseCache.get(key);
+
+      const now = Date.now();
+      if (now - lastReverseTime < 1000) {
+        await new Promise(r => setTimeout(r, 1000 - (now - lastReverseTime)));
+      }
+      lastReverseTime = Date.now();
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10`;
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (res.ok) {
+          const data = await res.json();
+          const place = data.display_name ? data.display_name.split(',').slice(0, 2).join(',') : null;
+          if (place) {
+            nominatimReverseCache.set(key, place);
+            return place;
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    document.getElementById('place-close').onclick = () => {
+      document.getElementById('place-card').style.display = 'none';
+      if (pinEntity) pinEntity.show = false;
+    };
+
+    // ========================================================================
+    // 6) SEARCH & GEOCODING (Nominatim)
+    // ========================================================================
+    const searchCache = new Map();
+    let lastSearchTime = 0;
+    const searchInput = document.getElementById('search-input');
+    const searchMsg = document.getElementById('search-msg');
+
+    searchInput.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const query = searchInput.value.trim();
+        if (!query) return;
+
+        if (searchCache.has(query.toLowerCase())) {
+          flyToSearchResult(searchCache.get(query.toLowerCase()));
+          return;
+        }
+
+        const now = Date.now();
+        if (now - lastSearchTime < 1000) {
+          await new Promise(r => setTimeout(r, 1000 - (now - lastSearchTime)));
+        }
+        lastSearchTime = Date.now();
+
+        searchMsg.textContent = "Searching...";
+        searchMsg.style.display = 'block';
+
+        try {
+          const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+          const data = await res.json();
+
+          if (data && data.length > 0) {
+            searchMsg.style.display = 'none';
+            searchCache.set(query.toLowerCase(), data[0]);
+            flyToSearchResult(data[0]);
+          } else {
+            searchMsg.textContent = "No results";
+            setTimeout(() => { searchMsg.style.display = 'none'; }, 3000);
+          }
+        } catch (err) {
+          searchMsg.textContent = "Search error";
+          setTimeout(() => { searchMsg.style.display = 'none'; }, 3000);
+        }
+      }
+    });
+
+    function flyToSearchResult(result) {
+      if (!result.boundingbox) return;
+      const [s, n, w, e] = result.boundingbox.map(parseFloat);
+      viewer.camera.flyTo({
+        destination: Cesium.Rectangle.fromDegrees(w, s, e, n),
+        duration: 2.5
+      });
+      const lat = parseFloat(result.lat);
+      const lon = parseFloat(result.lon);
+      setTimeout(() => {
+        const cart = Cesium.Cartesian3.fromDegrees(lon, lat);
+        const carto = Cesium.Cartographic.fromDegrees(lon, lat);
+        if (pinEntity) {
+          pinEntity.position = cart;
+          pinEntity.show = true;
+        }
+        showPlaceCard(lat, lon, carto);
+      }, 1500);
+    }
+
+    // ========================================================================
+    // 7) CONTROLS & UI EVENT HANDLERS
+    // ========================================================================
+    // Layers popover toggle
+    const btnLayers = document.getElementById('btn-layers');
+    const layersPopover = document.getElementById('layers-popover');
+    btnLayers.onclick = (e) => {
+      e.stopPropagation();
+      const open = layersPopover.style.display === 'block';
+      layersPopover.style.display = open ? 'none' : 'block';
+      btnLayers.setAttribute('aria-expanded', !open);
+    };
+
+    document.addEventListener('click', (e) => {
+      if (!layersPopover.contains(e.target) && e.target !== btnLayers) {
+        layersPopover.style.display = 'none';
+        btnLayers.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    // Checkboxes
+    document.getElementById('check-labels').onchange = (e) => {
+      if (labelsLayer) labelsLayer.show = e.target.checked;
+    };
+    document.getElementById('check-roads').onchange = (e) => {
+      isRoadsEnabled = e.target.checked;
+      if (roadsLayer) {
+        const h = viewer.camera.positionCartographic.height;
+        roadsLayer.show = isRoadsEnabled && (h < 400000);
+      }
+    };
+    document.getElementById('check-lighting').onchange = (e) => {
+      globe.enableLighting = e.target.checked;
+    };
+
+    // Terrain exaggeration buttons
+    document.querySelectorAll('.seg-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.seg-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-checked', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-checked', 'true');
+        TERRAIN_EXAGGERATION = parseFloat(btn.dataset.exag);
+        scene.verticalExaggeration = TERRAIN_EXAGGERATION;
+      };
+    });
+
+    // Side navigation buttons
+    document.getElementById('btn-zoom-in').onclick = () => {
+      const h = viewer.camera.positionCartographic.height;
+      viewer.camera.zoomIn(h * 0.4);
+    };
+    document.getElementById('btn-zoom-out').onclick = () => {
+      const h = viewer.camera.positionCartographic.height;
+      viewer.camera.zoomOut(h * 0.6);
+    };
+    document.getElementById('btn-reset-north').onclick = () => {
+      const pos = viewer.camera.positionCartographic;
+      viewer.camera.flyTo({
+        destination: Cesium.Cartesian3.fromRadians(pos.longitude, pos.latitude, pos.height),
+        orientation: {
+          heading: 0.0,
+          pitch: Cesium.Math.toRadians(-90),
+          roll: 0.0
+        },
+        duration: 1.0
+      });
+    };
+    document.getElementById('btn-reset-view').onclick = () => {
+      viewer.camera.flyTo({
+        destination: START_DESTINATION,
+        orientation: {
+          heading: 0.0,
+          pitch: Cesium.Math.toRadians(-90),
+          roll: 0.0
+        },
+        duration: 1.5
+      });
+    };
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key === 'Escape') {
+        layersPopover.style.display = 'none';
+        btnLayers.setAttribute('aria-expanded', 'false');
+        document.getElementById('place-card').style.display = 'none';
+        if (pinEntity) pinEntity.show = false;
+      } else if (e.key === '+' || e.key === '=') {
+        viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.35);
+      } else if (e.key === '-' || e.key === '_') {
+        viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.5);
+      }
+    });
+
+    // Toast helper
+    let toastTimer = null;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.style.display = 'none'; }, 5000);
+    }
+  </script>
+</body>
+</html>
