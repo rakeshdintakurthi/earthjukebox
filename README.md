@@ -17,25 +17,35 @@ An interactive, scientifically grounded 3D planetary climate globe built with **
 
 ## 🛰️ Real NASA Datasets Integrated
 
-The application integrates real satellite and Earth observation datasets directly from **NASA EOSDIS** (Earth Observing System Data and Information System):
+The application integrates real satellite and Earth observation datasets directly from **NASA EOSDIS** (Earth Observing System Data and Information System) and official NASA science missions:
 
-### 1. NASA FIRMS Active Wildfires (MODIS C6.1 NRT)
-- **Source:** NASA Earth Observing System Data and Information System ([NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/))
-- **Satellites:** NASA **Terra** and **Aqua** satellites carrying the **MODIS** (Moderate Resolution Imaging Spectroradiometer) sensor.
-- **Coverage:** Global 24-hour near-real-time thermal anomaly observations (13,940+ active wildfire hotspots).
-- **Telemetry Captured:**
-  - **Fire Radiative Power (FRP):** Radiant heat output measured in Megawatts ($MW$).
-  - **Brightness Temperature:** Thermal emission in Kelvin ($K$).
-  - **Detection Confidence:** Quality validation percentage ($0–100\%$).
-  - **Satellite & Orbit:** Terra / Aqua day and night acquisitions.
-- **Local Data Files:**
-  - Raw Satellite CSV: `data/nasa_firms_modis_24h.csv` (~1.1 MB)
-  - Parsed Geo-Telemetry: `data/nasa_firms_active_fires.json` (~1.9 MB)
-  - Ingestion Script: `scripts/download_nasa_firms.py`
+| Entry | Resource / Link Text | Link URL | Purpose in Project |
+| :--- | :--- | :--- | :--- |
+| **Entry 1** | **NASA GPM – IMERG Precipitation Data** | [`https://gpm.nasa.gov/data/imerg`](https://gpm.nasa.gov/data/imerg) | Powers the real-time rainfall layer and binaural rain sound sonification |
+| **Entry 2** | **NASA OSCAR – Ocean Surface Currents** | [`https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0`](https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0) | Powers the 3D ocean surface current vectors and sea surface temperature analysis |
+| **Entry 3** | **NASA Global Precipitation Climatology Project (GPCP)** | [`https://www.nccs.nasa.gov/gpcp/`](https://www.nccs.nasa.gov/gpcp/) | High-resolution monthly global precipitation baseline grids |
+| **Entry 4** | **NASA EOSDIS FIRMS Active Wildfires (MODIS C6.1 NRT)** | [`https://firms.modaps.eosdis.nasa.gov/active_fire/`](https://firms.modaps.eosdis.nasa.gov/active_fire/) | Real-time global active wildfire layer (13,900+ hotspots) with Fire Radiative Power (MW) and combustion audio |
+| **Entry 5** | **NASA GISS Surface Temperature Analysis (GISTEMP v4)** | [`https://data.giss.nasa.gov/gistemp/`](https://data.giss.nasa.gov/gistemp/) | Long-term historical surface temperature anomalies and musical harmonic chime mappings |
+| **Entry 6** | **NASA Visible Earth – Blue Marble Next Generation** | [`https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation`](https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation) | Base photorealistic planetary surface and cloud imagery on the 3D Cesium globe |
 
-### 2. NASA GPM & GPCP Precipitation Climatology
-- **Source:** NASA Global Precipitation Measurement ([NASA GPM IMERG](https://gpm.nasa.gov/data/imerg)) and GPCP v2.3.
-- **Coverage:** Global monthly gridded precipitation rate in $\text{mm/day}$ powering the Rainfall Sonification Engine.
+---
+
+### Detailed NASA Data Breakdown
+
+#### 1. NASA GPM – IMERG & GPCP Precipitation
+- **Source:** NASA Global Precipitation Measurement ([NASA GPM IMERG](https://gpm.nasa.gov/data/imerg)) and [NASA NCCS GPCP](https://www.nccs.nasa.gov/gpcp/)
+- **Usage:** Mapped into global precipitation grids. Powers the **Rainfall Sonification Engine**, scaling volume from complete silence ($0.0\text{ mm/day}$) to intense downpour ($\ge 14\text{ mm/day}$) with binaural ear separation.
+
+#### 2. NASA OSCAR – Ocean Surface Currents
+- **Source:** NASA Physical Oceanography Distributed Active Archive Center ([NASA PO.DAAC OSCAR](https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0))
+- **Usage:** Renders global ocean current velocities ($m/s$), circulation gyres (Gulf Stream, Kuroshio), and SST anomalies on the 3D Cesium globe.
+
+#### 3. NASA EOSDIS FIRMS – Active Fire Data (MODIS C6.1 NRT)
+- **Source:** NASA Earth Observing System Data and Information System ([NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/active_fire/))
+- **Satellites:** NASA **Terra** and **Aqua** satellites carrying the **MODIS** sensor.
+- **Coverage:** 13,940+ active global wildfire detections within the last 24 hours.
+- **Telemetry:** Fire Radiative Power (MW), Brightness Temperature ($K$), and detection confidence.
+- **Local Assets:** `data/nasa_firms_modis_24h.csv` (~1.1 MB) and `data/nasa_firms_active_fires.json` (~1.9 MB).
 
 ---
 
@@ -111,11 +121,11 @@ Visualizes acoustic waveforms in real time with high-DPI canvas rendering:
 
 | Layer | Type | Native Units | Primary Source | Link |
 | :--- | :--- | :--- | :--- | :--- |
-| **Active Wildfires** | Overlay | MW (FRP) & Kelvin | NASA EOSDIS FIRMS (MODIS C6.1 NRT) | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) |
+| **Active Wildfires** | Overlay | MW (FRP) & Kelvin | NASA EOSDIS FIRMS (MODIS C6.1 NRT) | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/active_fire/) |
 | **Heat Map** | Raster | Anomaly in °C | NOAA GlobalTemp v6.0.0 (1850–2025) | [NOAA NCEI](https://doi.org/10.25921/9qth-2p70) |
-| **Rainfall** | Raster | mm/day | GPCP v2.3 / NASA GPM IMERG | [NASA GPM](https://gpm.nasa.gov/data/imerg) |
+| **Rainfall** | Raster | mm/day | NASA GPM IMERG & NASA GPCP | [NASA GPM](https://gpm.nasa.gov/data/imerg) / [NASA GPCP](https://www.nccs.nasa.gov/gpcp/) |
 | **Wind** | Overlay | m/s & km/h | NOAA GFS 0.25° / ECMWF ERA5 | [NOAA NOMADS](https://nomads.ncep.noaa.gov/) |
-| **Ocean SST** | Overlay/Raster| °C & m/s | NASA OSCAR & NOAA OISST v2.1 | [PO.DAAC](https://podaac.jpl.nasa.gov/) |
+| **Ocean SST & Currents** | Overlay/Raster| °C & m/s | NASA PO.DAAC OSCAR & NOAA OISST | [NASA OSCAR](https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0) |
 | **Tides** | Overlay | Meters (M2 Amplitude)| CNES/LEGOS FES2014 & TPXO9 | [AVISO+](https://www.aviso.altimetry.fr/) |
 | **Tectonic Plates**| Vector | mm/yr (MORVEL) | Peter Bird (PB2002) GeoJSON | [PB2002](https://github.com/fraxen/tectonicplates) |
 
