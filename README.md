@@ -1,11 +1,14 @@
 # 🌍 Thermophone: 3D Multilayer Climate & Earth Systems Globe
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Vercel-black?style=flat&logo=vercel)](https://earthjukebox-snowy.vercel.app/)
 [![CesiumJS](https://img.shields.io/badge/CesiumJS-1.114+-007ACC?style=flat&logo=cesium&logoColor=white)](https://cesium.com/platform/cesiumjs/)
 [![Web Audio API](https://img.shields.io/badge/Web%20Audio%20API-Spatial%20Binaural-FF6B6B?style=flat)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 [![NOAA Dataset](https://img.shields.io/badge/NOAA-GlobalTemp%20v6.0-4A90E2?style=flat)](https://www.ncei.noaa.gov/products/land-based-station/noaa-global-temp)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 An interactive, scientifically grounded 3D planetary climate globe built with **CesiumJS** and the **Web Audio API**. Features an on-demand modular layer architecture, dual render states, natural-language voice/command parser, minimal Linear-grade comparative analytics, and real-time binaural sonification.
+
+> 🚀 **Live Deployment:** [https://earthjukebox-snowy.vercel.app/](https://earthjukebox-snowy.vercel.app/)
 
 ![Thermophone Earth 3D Globe](assets/earth_globe_view.png)
 
@@ -78,7 +81,10 @@ Visualizes acoustic waveforms in real time with high-DPI canvas rendering:
 
 ## 🚀 Quick Start & Running Locally
 
-### Option 1: Python HTTP Server (Zero Dependencies)
+### Option 1: Live Web App (Instant Access)
+Visit the live deployed application on Vercel: **[https://earthjukebox-snowy.vercel.app/](https://earthjukebox-snowy.vercel.app/)**
+
+### Option 2: Python HTTP Server (Zero Dependencies Locally)
 ```bash
 python -m http.server 8000
 ```
