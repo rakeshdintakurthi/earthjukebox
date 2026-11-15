@@ -3,13 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Thermophone Earth</title>
+  <title>Thermophone Earth - 3D Multilayer Climate Globe</title>
 
   <!-- CesiumJS Pinned Library -->
   <link rel="stylesheet" href="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Widgets/widgets.css"
         onerror="this.onerror=null; this.href='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Widgets/widgets.css';">
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.145/Build/Cesium/Cesium.js"
           onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/npm/cesium@1.145.0/Build/Cesium/Cesium.js';"></script>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -19,16 +24,15 @@
       --text: #e8eaed;
       --muted: #9aa0a6;
       --accent: #8ab4f8;
-      --accent-hover: #aecbfa;
-      --border: rgba(255, 255, 255, 0.08);
-      --font: "Google Sans", Roboto, Inter, system-ui, -apple-system, sans-serif;
-      --shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+      --pin-a: #00d2ff;
+      --pin-b: #ffd000;
+      --border: rgba(255, 255, 255, 0.1);
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
       --radius: 12px;
     }
 
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
+    *, *::before, *::after { box-sizing: border-box; }
 
     html, body {
       margin: 0;
@@ -36,7 +40,7 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background-color: #000000;
+      background-color: #020509;
       color: var(--text);
       font-family: var(--font);
       font-size: 13px;
@@ -44,7 +48,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* Full-bleed Cesium container */
     #cesium {
       position: fixed;
       inset: 0;
@@ -53,24 +56,11 @@
       z-index: 1;
     }
 
-    /* Restyle Cesium legal credits to be small and muted */
     .cesium-widget-credits {
-      font-size: 10px !important;
-      color: rgba(255, 255, 255, 0.45) !important;
-      position: absolute !important;
-      bottom: 6px !important;
-      right: 12px !important;
-      left: auto !important;
-      background: transparent !important;
-      pointer-events: auto !important;
-      z-index: 20 !important;
-    }
-    .cesium-widget-credits a {
-      color: rgba(255, 255, 255, 0.55) !important;
-      text-decoration: none !important;
+      display: none !important;
     }
 
-    /* Common floating container */
+    /* Common floating containers */
     .floating-ui {
       background-color: var(--surface);
       border: 1px solid var(--border);
@@ -80,11 +70,11 @@
       z-index: 50;
     }
 
-    /* Top-left floating bar */
-    .top-bar {
+    /* Top Toolbar */
+    .top-toolbar {
       position: absolute;
-      top: 12px;
-      left: 12px;
+      top: 14px;
+      left: 14px;
       height: 48px;
       border-radius: 24px;
       display: flex;
@@ -97,907 +87,1360 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      white-space: nowrap;
+      cursor: pointer;
     }
-
     .brand-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background-color: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
     }
-
     .brand-title {
       font-size: 14px;
-      font-weight: 500;
-      color: var(--text);
+      font-weight: 600;
+      white-space: nowrap;
     }
 
-    .search-box {
+    .toolbar-divider {
+      width: 1px;
+      height: 22px;
+      background-color: var(--border);
+    }
+
+    /* Command / Search Box */
+    .cmd-box {
       position: relative;
       display: flex;
       align-items: center;
     }
-
-    .search-icon {
+    .cmd-icon {
       position: absolute;
       left: 10px;
       color: var(--muted);
       pointer-events: none;
     }
-
-    .search-input {
-      width: 180px;
+    .cmd-input {
+      width: 290px;
       height: 36px;
       border-radius: 18px;
       background-color: var(--surface-2);
       border: 1px solid transparent;
       color: var(--text);
-      padding: 0 12px 0 32px;
+      padding: 0 36px 0 32px;
       font-family: var(--font);
-      font-size: 13px;
+      font-size: 12.5px;
       outline: none;
       transition: width 0.2s, border-color 0.2s;
     }
-
-    .search-input:focus {
-      width: 230px;
+    .cmd-input:focus {
+      width: 340px;
       border-color: var(--accent);
     }
+    .cmd-input::placeholder { color: var(--muted); }
 
-    .search-input::placeholder {
+    .cmd-mic-btn {
+      position: absolute;
+      right: 4px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
       color: var(--muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cmd-mic-btn:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+    .cmd-mic-btn.listening { color: #ff4757; animation: pulse 1s infinite; }
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+    .tool-btn {
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 17px;
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .tool-btn:hover { background-color: var(--surface-2); color: var(--text); }
+    .tool-btn.active { background-color: rgba(138, 180, 248, 0.14); border-color: rgba(138, 180, 248, 0.35); color: var(--accent); }
+    .tool-btn.sound-active { background-color: rgba(0, 210, 255, 0.16); border-color: rgba(0, 210, 255, 0.45); color: #00d2ff; }
+
+    /* Animated Audio Visualizer Bars */
+    .audio-bars {
+      display: inline-flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 14px;
+      margin-left: 2px;
+    }
+    .audio-bars span {
+      display: inline-block;
+      width: 2.5px;
+      height: 3px;
+      background-color: currentColor;
+      border-radius: 1px;
+      transition: height 0.08s ease;
     }
 
-    .search-msg {
+    .popover-anchor { position: relative; }
+
+    /* Layers Menu Popover */
+    .layers-popover {
       position: absolute;
       top: 44px;
-      left: 0;
+      right: 0;
+      width: 310px;
+      max-width: 90vw;
+      max-height: 85vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px;
+      display: none;
+      z-index: 70;
+    }
+    .layer-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin: 12px 0 6px 0;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+    .layer-group-title:first-child { margin-top: 0; }
+
+    .layer-item-row { margin-bottom: 10px; }
+    .layer-check-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .layer-check-label input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; width: 15px; height: 15px; }
+
+    .layer-sub-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+      padding-left: 20px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .layer-sub-controls input[type="range"] {
+      flex: 1;
+      height: 4px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .layer-select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 11px;
+      border-radius: 4px;
+      padding: 2px 4px;
+      outline: none;
+    }
+
+    /* Toast */
+    .status-toast {
+      position: absolute;
+      top: 68px;
+      left: 14px;
       background: var(--surface);
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
       color: var(--text);
       font-size: 12px;
-      padding: 6px 12px;
-      border-radius: 8px;
-      white-space: nowrap;
+      padding: 6px 14px;
+      border-radius: 16px;
       display: none;
       z-index: 60;
     }
 
-    .bar-divider {
-      width: 1px;
-      height: 24px;
-      background-color: var(--border);
+    /* Stacked Collapsible Legends at Bottom-Left */
+    .legends-stack {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 260px;
+      z-index: 45;
+    }
+    .legend-card {
+      padding: 10px 14px;
+    }
+    .legend-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+    .legend-unit {
+      color: var(--muted);
+      font-size: 10px;
+    }
+    .legend-bar {
+      height: 6px;
+      border-radius: 3px;
+      margin-bottom: 4px;
+    }
+    .legend-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--muted);
     }
 
-    /* Icon button */
-    .icon-btn {
-      width: 36px;
-      height: 36px;
-      border-radius: 18px;
-      background: transparent;
+    /* Shared Timeline Dock at Bottom-Center */
+    .shared-timeline-dock {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 460px);
+      max-width: 540px;
+      min-width: 320px;
+      height: 52px;
+      border-radius: 26px;
+      display: none;
+      align-items: center;
+      padding: 0 16px;
+      gap: 12px;
+      z-index: 45;
+    }
+    .tl-play-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
       border: none;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+    .tl-play-btn:hover { background: rgba(255,255,255,0.15); }
+    .tl-slider {
+      flex: 1;
+      height: 5px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .tl-info {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      min-width: 70px;
+    }
+    .tl-readout {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .tl-layer-label {
+      font-size: 10px;
       color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* ==========================================================================
+       PREMIUM COMPARISON COMPONENT DESIGN TOKENS & STYLING
+       ========================================================================== */
+    :root {
+      --cmp-bg: rgba(11, 15, 20, 0.88);
+      --cmp-border: 1px solid rgba(255, 255, 255, 0.06);
+      --cmp-radius: 16px;
+      --cmp-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+
+      --cmp-surface: rgba(255, 255, 255, 0.03);
+      --cmp-surface-hover: rgba(255, 255, 255, 0.06);
+      --cmp-card-border: 1px solid rgba(255, 255, 255, 0.05);
+      --cmp-card-radius: 12px;
+
+      --cmp-text-primary: #E8EDF2;
+      --cmp-text-secondary: #8A94A3;
+      --cmp-text-tertiary: #5B6573;
+
+      --cmp-pin-a: #4CC9F0;
+      --cmp-pin-b: #F5B94A;
+
+      --cmp-delta-pos: #5BD6A0;
+      --cmp-delta-neg: #FF7A7A;
+
+      --cmp-btn-primary-bg: #1A212B;
+      --cmp-btn-primary-hover: #222B38;
+      --cmp-transition: 180ms ease-out;
+    }
+
+    /* Base Panel */
+    .inspector-panel {
+      position: absolute;
+      top: 72px;
+      left: 20px;
+      width: 360px;
+      max-height: calc(100vh - 100px);
+      padding: 20px;
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 65;
+      background: var(--cmp-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: var(--cmp-border);
+      border-radius: var(--cmp-radius);
+      box-shadow: var(--cmp-shadow);
+      color: var(--cmp-text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      box-sizing: border-box;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* Custom 4px thin scrollbar */
+    .inspector-panel::-webkit-scrollbar {
+      width: 4px;
+    }
+    .inspector-panel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .inspector-panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 2px;
+    }
+    .inspector-panel::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.24);
+    }
+
+    /* Mobile Bottom Sheet (<640px) */
+    .panel-drag-handle {
+      display: none;
+    }
+    @media (max-width: 640px) {
+      .inspector-panel {
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-height: 60vh;
+        height: 60vh;
+        border-radius: 16px 16px 0 0;
+        border-left: none;
+        border-right: none;
+        border-bottom: none;
+        padding: 16px 20px 24px 20px;
+      }
+      .panel-drag-handle {
+        display: block;
+        width: 36px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.2);
+        margin: 0 auto 4px auto;
+      }
+    }
+
+    /* 1. Header */
+    .cmp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .cmp-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--cmp-text-primary);
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+    .cmp-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cmp-distance-chip {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--cmp-text-secondary);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 3px 8px;
+      border-radius: 9999px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .cmp-btn-icon-close {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--cmp-text-secondary);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: background-color 0.15s, color 0.15s;
+      transition: background var(--cmp-transition), color var(--cmp-transition);
+    }
+    .cmp-btn-icon-close:hover {
+      background: var(--cmp-surface-hover);
+      color: var(--cmp-text-primary);
+    }
+    .cmp-btn-icon-close:focus-visible {
+      outline: 2px solid var(--cmp-pin-a);
     }
 
-    .icon-btn:hover {
-      background-color: var(--surface-2);
-      color: var(--text);
+    /* 2. Pin Identity Row */
+    .cmp-identity-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
     }
-
-    .icon-btn:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
-    }
-
-    /* Layers Popover */
-    .popover-anchor {
+    .cmp-pin-card {
+      background: var(--cmp-surface);
+      border: var(--cmp-card-border);
+      border-radius: var(--cmp-card-radius);
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: background var(--cmp-transition), border-color var(--cmp-transition);
       position: relative;
+      overflow: hidden;
     }
-
-    .layers-popover {
-      position: absolute;
-      top: 44px;
-      right: 0;
-      min-width: 220px;
-      padding: 14px 16px;
-      display: none;
+    .cmp-pin-card:hover {
+      background: var(--cmp-surface-hover);
     }
-
-    .pop-title {
-      font-size: 14px;
+    .cmp-pin-card:focus-visible {
+      outline: none;
+    }
+    .cmp-pin-card.target-active-a {
+      border-color: rgba(76, 201, 240, 0.45);
+    }
+    .cmp-pin-card.target-active-b {
+      border-color: rgba(245, 185, 74, 0.45);
+    }
+    .cmp-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .cmp-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .cmp-dot-a { background: var(--cmp-pin-a); }
+    .cmp-dot-b { background: var(--cmp-pin-b); }
+    .cmp-pin-tag {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .cmp-pin-tag.tag-a { color: var(--cmp-pin-a); }
+    .cmp-pin-tag.tag-b { color: var(--cmp-pin-b); }
+    .cmp-pin-name {
+      font-size: 13px;
       font-weight: 500;
-      margin-bottom: 12px;
+      color: var(--cmp-text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.3;
+    }
+    .cmp-pin-coords {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--cmp-text-secondary);
+      margin-top: 2px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .pop-check {
+    /* 3. Comparison Table */
+    .cmp-table-container {
+      display: flex;
+      flex-direction: column;
+    }
+    .cmp-table-header {
+      display: grid;
+      grid-template-columns: 104px 74px 74px 1fr;
+      align-items: center;
+      padding: 0 4px 6px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .cmp-th {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .cmp-th-metric { color: var(--cmp-text-tertiary); }
+    .cmp-th-a { color: var(--cmp-pin-a); }
+    .cmp-th-b { color: var(--cmp-pin-b); }
+    .cmp-th-delta { color: var(--cmp-text-secondary); text-align: right; }
+
+    .cmp-table-body {
+      display: flex;
+      flex-direction: column;
+    }
+    .cmp-tr {
+      display: grid;
+      grid-template-columns: 104px 74px 74px 1fr;
+      align-items: center;
+      min-height: 44px;
+      padding: 6px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background var(--cmp-transition);
+    }
+    .cmp-tr:last-child {
+      border-bottom: none;
+    }
+    .cmp-tr:hover {
+      background: var(--cmp-surface-hover);
+    }
+    .cmp-td-metric {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
-      margin-bottom: 10px;
-      cursor: pointer;
+      color: var(--cmp-text-secondary);
+      font-size: 12px;
+      font-weight: 500;
     }
-
-    .pop-check input[type="checkbox"] {
-      accent-color: var(--accent);
-      cursor: pointer;
+    .cmp-metric-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      color: var(--cmp-text-tertiary);
     }
-
-    .pop-label {
+    .cmp-td-val {
+      font-size: 15px;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+    .cmp-td-val.val-primary { color: var(--cmp-text-primary); }
+    .cmp-td-val.val-secondary { color: var(--cmp-text-secondary); }
+    .cmp-unit {
       font-size: 11px;
-      color: var(--muted);
-      margin: 10px 0 6px 0;
+      font-weight: 400;
+      color: var(--cmp-text-secondary);
+      margin-left: 2px;
+    }
+    .cmp-sub-text {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--cmp-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+    .cmp-td-delta {
+      text-align: right;
+      font-size: 13px;
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .cmp-td-delta.delta-pos { color: var(--cmp-delta-pos); }
+    .cmp-td-delta.delta-neg { color: var(--cmp-delta-neg); }
+    .cmp-td-delta.delta-neutral { color: var(--cmp-text-tertiary); }
+
+    /* Empty State */
+    .cmp-empty-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 32px 16px;
+      color: var(--cmp-text-secondary);
+      font-size: 13px;
+      font-weight: 400;
+      border-radius: var(--cmp-card-radius);
+      background: var(--cmp-surface);
+      border: var(--cmp-card-border);
     }
 
-    .segmented {
+    /* Skeleton Loading Shimmer */
+    @keyframes cmp-shimmer {
+      0% { opacity: 0.35; }
+      50% { opacity: 0.7; }
+      100% { opacity: 0.35; }
+    }
+    .cmp-skeleton {
+      height: 12px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      animation: cmp-shimmer 1.4s ease-in-out infinite;
+    }
+
+    /* 4. Sound Section (Collapsible) */
+    .cmp-sound-section {
       display: flex;
-      background-color: var(--surface-2);
-      border-radius: 14px;
+      flex-direction: column;
+      background: var(--cmp-surface);
+      border: var(--cmp-card-border);
+      border-radius: var(--cmp-card-radius);
+      padding: 12px;
+      transition: background var(--cmp-transition);
+    }
+    .cmp-sound-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--cmp-text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0;
+      min-height: 24px;
+      transition: color var(--cmp-transition);
+    }
+    .cmp-sound-toggle:hover {
+      color: var(--cmp-text-primary);
+    }
+    .cmp-sound-toggle .cmp-chevron {
+      width: 14px;
+      height: 14px;
+      transition: transform var(--cmp-transition);
+    }
+    .cmp-sound-toggle[aria-expanded="true"] .cmp-chevron {
+      transform: rotate(180deg);
+    }
+
+    .cmp-sound-content {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      transition: all var(--cmp-transition);
+    }
+    .cmp-sound-content.expanded {
+      display: flex;
+    }
+
+    /* Segmented Control */
+    .cmp-segmented-control {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 8px;
       padding: 2px;
       gap: 2px;
     }
-
-    .seg-btn {
-      flex: 1;
-      border: none;
+    .cmp-segment {
+      height: 28px;
+      border: 1px solid transparent;
+      border-radius: 6px;
       background: transparent;
-      color: var(--muted);
-      font-family: var(--font);
-      font-size: 12px;
-      padding: 4px 6px;
-      border-radius: 12px;
+      color: var(--cmp-text-secondary);
+      font-size: 11px;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all var(--cmp-transition);
+    }
+    .cmp-segment:hover {
+      color: var(--cmp-text-primary);
+    }
+    .cmp-segment.active {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.08);
+      color: var(--cmp-text-primary);
     }
 
-    .seg-btn.active {
-      background-color: var(--surface);
-      color: var(--text);
+    /* Sound Grid (Mini-table) */
+    .cmp-sound-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .cmp-sound-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .cmp-sound-card-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+    .cmp-ear {
+      color: var(--cmp-text-tertiary);
+      font-size: 10px;
+    }
+    .cmp-sound-val {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--cmp-text-primary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Quiet Insight line */
+    .cmp-sound-insight {
+      font-size: 11px;
+      color: var(--cmp-text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Waveform Frequency Comparison Oscilloscope */
+    .cmp-waveform-box {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .cmp-waveform-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .cmp-waveform-title {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--cmp-text-tertiary);
+    }
+    .cmp-waveform-badge {
+      font-size: 10px;
+      color: var(--cmp-text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+    .cmp-wave-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .cmp-wave-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+    .cmp-wave-lbl {
       font-weight: 500;
     }
+    .cmp-wave-lbl.tag-a { color: var(--cmp-pin-a); }
+    .cmp-wave-lbl.tag-b { color: var(--cmp-pin-b); }
+    .cmp-wave-lbl.tag-combo { color: var(--cmp-text-primary); }
+    .cmp-wave-dot-combo {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cmp-pin-a), var(--cmp-pin-b));
+    }
+    .cmp-wave-freq {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--cmp-text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+    .cmp-wave-canvas {
+      width: 100%;
+      height: 38px;
+      background: rgba(11, 15, 20, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      display: block;
+    }
+    .cmp-wave-canvas-combo {
+      height: 48px;
+    }
 
-    /* Bottom-Right 40px Round Controls */
-    .side-stack {
+    /* Playback Controls */
+    .cmp-playback-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .cmp-btn-primary {
+      height: 32px;
+      width: 100%;
+      background: var(--cmp-btn-primary-bg);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: var(--cmp-text-primary);
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: background var(--cmp-transition), border-color var(--cmp-transition);
+    }
+    .cmp-btn-primary:hover {
+      background: var(--cmp-btn-primary-hover);
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+    .cmp-btn-primary:focus-visible {
+      outline: 2px solid var(--cmp-pin-a);
+    }
+
+    .cmp-playback-ghost-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cmp-btn-ghost {
+      height: 32px;
+      flex: 1;
+      background: var(--cmp-surface);
+      border: var(--cmp-card-border);
+      border-radius: 8px;
+      color: var(--cmp-text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: background var(--cmp-transition), color var(--cmp-transition), border-color var(--cmp-transition);
+    }
+    .cmp-btn-ghost:hover {
+      background: var(--cmp-surface-hover);
+      color: var(--cmp-text-primary);
+    }
+    .cmp-btn-ghost.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--cmp-text-primary);
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+    .cmp-btn-icon {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      flex: 0 0 32px;
+      padding: 0;
+    }
+    .cmp-btn-stop {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      flex: 0 0 32px;
+      background: rgba(255, 122, 122, 0.1);
+      border: 1px solid rgba(255, 122, 122, 0.3);
+      border-radius: 8px;
+      color: var(--cmp-delta-neg);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background var(--cmp-transition);
+    }
+    .cmp-btn-stop:hover {
+      background: rgba(255, 122, 122, 0.2);
+    }
+
+    /* 5. Footer Actions */
+    .cmp-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 4px;
+    }
+    .cmp-footer-left {
+      display: flex;
+      gap: 8px;
+    }
+    .cmp-btn-text {
+      background: transparent;
+      border: none;
+      color: var(--cmp-text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 6px;
+      transition: color var(--cmp-transition);
+    }
+    .cmp-btn-text:hover {
+      color: var(--cmp-text-primary);
+    }
+    .cmp-btn-text:focus-visible {
+      outline: 2px solid var(--cmp-pin-a);
+    }
+
+    /* Bottom-Right Navigation stack */
+    .nav-stack {
       position: absolute;
+      bottom: 16px;
       right: 16px;
-      bottom: 36px;
       display: flex;
       flex-direction: column;
       gap: 8px;
       z-index: 45;
     }
-
-    .round-btn-40 {
+    .nav-btn {
       width: 40px;
       height: 40px;
       border-radius: 20px;
       border: 1px solid var(--border);
-      background-color: var(--surface);
-      color: var(--muted);
+      background: var(--surface);
+      color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       box-shadow: var(--shadow);
-      transition: background-color 0.15s, color 0.15s;
     }
-
-    .round-btn-40:hover {
-      background-color: var(--surface-2);
-      color: var(--text);
-    }
-
-    .round-btn-40:focus-visible {
-      outline: 2px solid var(--accent);
-      outline-offset: 1px;
-    }
-
-    /* Bottom-Left Altitude Card */
-    .altitude-card {
-      position: absolute;
-      bottom: 16px;
-      left: 16px;
-      padding: 8px 14px;
-      font-size: 12px;
-      z-index: 45;
-    }
-
-    .altitude-card strong {
-      font-size: 13px;
-      color: var(--text);
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    /* Click Place Info Card */
-    .place-card {
-      position: absolute;
-      top: 72px;
-      left: 12px;
-      width: 280px;
-      padding: 14px 16px;
-      display: none;
-      z-index: 60;
-    }
-
-    .place-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 8px;
-    }
-
-    .place-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text);
-      line-height: 1.3;
-    }
-
-    .place-close {
-      background: transparent;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      padding: 2px;
-    }
-
-    .place-close:hover {
-      color: var(--text);
-    }
-
-    .place-coords {
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-
-    .place-elev {
-      font-size: 12px;
-      color: var(--accent);
-    }
-
-    /* Floating Toast */
-    .toast {
-      position: absolute;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background-color: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 8px 18px;
-      font-size: 12px;
-      color: var(--text);
-      box-shadow: var(--shadow);
-      display: none;
-      z-index: 100;
-    }
-
-    /* Error Fallback Banner */
-    #cesium-error {
-      position: fixed;
-      top: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #7f1d1d;
-      color: #fef2f2;
-      padding: 12px 20px;
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      z-index: 999;
-      display: none;
-      font-size: 13px;
-      font-weight: 500;
-    }
+    .nav-btn:hover { background-color: var(--surface-2); }
   </style>
 </head>
 <body>
 
-  <!-- Fallback notification -->
-  <div id="cesium-error" role="alert">CesiumJS could not load. Check your network or the CDN URL.</div>
+  <!-- Cesium 3D Globe -->
+  <div id="cesium" role="region" aria-label="3D Multilayer Earth Globe"></div>
 
-  <!-- Cesium 3D Globe Container -->
-  <div id="cesium" role="region" aria-label="Cesium 3D Earth Globe"></div>
-
-  <!-- Top-left floating bar (Google Earth style) -->
-  <header class="top-bar floating-ui" role="toolbar" aria-label="Main toolbar">
-    <div class="brand">
+  <!-- Top Toolbar -->
+  <header id="top-toolbar" class="top-toolbar floating-ui" role="toolbar" aria-label="Main Toolbar">
+    <div class="brand" id="brand-reset" title="Click to reset to clean Default Satellite view">
       <span class="brand-dot" aria-hidden="true"></span>
       <span class="brand-title">Thermophone Earth</span>
     </div>
 
-    <div class="search-box">
-      <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <div class="toolbar-divider" aria-hidden="true"></div>
+
+    <!-- Command / Search Box -->
+    <div class="cmd-box">
+      <svg class="cmd-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
       </svg>
-      <input id="search-input" type="search" class="search-input" placeholder="Search places" autocomplete="off" spellcheck="false" aria-label="Search places">
-      <div id="search-msg" class="search-msg" aria-live="polite"></div>
+      <input id="cmd-input" type="text" class="cmd-input" placeholder="Search places or command (e.g. 'heat map 1880', 'warming since 1850')" autocomplete="off" spellcheck="false" aria-label="Command search">
+      <button id="btn-mic" class="cmd-mic-btn" title="Voice command (e.g. 'add wind and ocean currents')" aria-label="Voice input">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+      </button>
     </div>
 
-    <div class="bar-divider" aria-hidden="true"></div>
+    <div class="toolbar-divider" aria-hidden="true"></div>
 
+    <!-- Pin Tool -->
+    <button id="btn-pin-tool" class="tool-btn" title="Pin & Measure mode">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+      <span>Pin Tool</span>
+    </button>
+
+    <!-- Sonification Audio Tool -->
+    <button id="btn-sonification" class="tool-btn" title="Toggle Climate Sonification & Modulated Audio" aria-label="Audio Sonification">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </svg>
+      <span id="sonify-label">Sound</span>
+      <div class="audio-bars" id="audio-bars" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+      </div>
+    </button>
+
+    <!-- PDF Tech Stack Download -->
+    <a href="Thermophone_Earth_Tech_Stack_and_Architecture.pdf" download="Thermophone_Earth_Tech_Stack_and_Architecture.pdf" class="tool-btn" style="text-decoration:none;" title="Download PDF Tech Stack Report" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      <span>PDF Spec</span>
+    </a>
+
+    <!-- Layers Menu Button -->
     <div class="popover-anchor">
-      <button id="btn-layers" class="icon-btn" aria-label="Layers" aria-expanded="false" aria-haspopup="true" title="Layers">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <button id="btn-layers" class="tool-btn" aria-label="Layers" aria-expanded="false" title="Layers Menu">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="12 2 2 7 12 12 22 7 12 2"/>
           <polyline points="2 17 12 22 22 17"/>
           <polyline points="2 12 12 17 22 12"/>
         </svg>
+        <span>Layers</span>
       </button>
 
-      <!-- Layers Popover -->
-      <div id="layers-popover" class="layers-popover floating-ui" role="dialog" aria-label="Layer settings">
-        <div class="pop-title">Map Layers</div>
-        <label class="pop-check">
-          <input type="checkbox" id="check-labels" checked>
-          <span>Labels &amp; borders</span>
-        </label>
-        <label class="pop-check">
-          <input type="checkbox" id="check-roads" checked>
-          <span>Roads (zoom &lt; 400 km)</span>
-        </label>
-        <label class="pop-check">
-          <input type="checkbox" id="check-lighting" checked>
-          <span>Day/night shading</span>
-        </label>
-
-        <div class="pop-label">Terrain exaggeration</div>
-        <div class="segmented" role="radiogroup" aria-label="Terrain exaggeration">
-          <button class="seg-btn" data-exag="1.0" role="radio" aria-checked="false">1.0</button>
-          <button class="seg-btn active" data-exag="1.3" role="radio" aria-checked="true">1.3</button>
-          <button class="seg-btn" data-exag="2.0" role="radio" aria-checked="false">2.0</button>
+      <!-- Layers Popover Drawer -->
+      <div id="layers-popover" class="layers-popover floating-ui" role="dialog" aria-label="Layers Menu">
+        
+        <!-- SECTION 1: Raster Fields (Mutually Exclusive) -->
+        <div class="layer-group-title">Raster Field Layers (1 Active)</div>
+        
+        <div class="layer-item-row">
+          <label class="layer-check-label">
+            <span>🔥 Heat Map (1850–2025) [NOAA]</span>
+            <input type="checkbox" id="chk-layer-heat">
+          </label>
+          <div class="layer-sub-controls">
+            <span>Opacity</span>
+            <input type="range" id="slider-heat-op" min="10" max="100" value="60">
+          </div>
+          <div class="layer-sub-controls" style="margin-top:5px;">
+            <span>Display</span>
+            <select id="sel-heat-mode" class="layer-select">
+              <option value="temperature" selected>🔥 Surface Temp (°C)</option>
+              <option value="anomaly">📈 Anomaly (Δ°C)</option>
+            </select>
+          </div>
         </div>
+
+        <div class="layer-item-row">
+          <label class="layer-check-label">
+            <span>🌧️ Rainfall &amp; Precipitation</span>
+            <input type="checkbox" id="chk-layer-rainfall">
+          </label>
+          <div class="layer-sub-controls">
+            <span>Opacity</span>
+            <input type="range" id="slider-rain-op" min="10" max="100" value="60">
+          </div>
+        </div>
+
+        <!-- SECTION 2: Vector & Particle Overlays (Stackable) -->
+        <div class="layer-group-title">Stackable Overlays</div>
+
+        <div class="layer-item-row">
+          <label class="layer-check-label">
+            <span>💨 Wind Streamlines</span>
+            <input type="checkbox" id="chk-layer-wind">
+          </label>
+          <div class="layer-sub-controls">
+            <span>Alt</span>
+            <select id="sel-wind-alt" class="layer-select">
+              <option value="surface">Surface 10m</option>
+              <option value="850hpa">850 hPa</option>
+              <option value="500hpa">500 hPa</option>
+              <option value="250hpa">250 hPa (Jet)</option>
+            </select>
+            <span>Op</span>
+            <input type="range" id="slider-wind-op" min="10" max="100" value="85">
+          </div>
+        </div>
+
+        <div class="layer-item-row">
+          <label class="layer-check-label">
+            <span>🌊 Ocean Currents &amp; SST</span>
+            <input type="checkbox" id="chk-layer-ocean">
+          </label>
+          <div class="layer-sub-controls">
+            <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+              <input type="checkbox" id="chk-sub-sst" checked>
+              <span>SST</span>
+            </label>
+            <input type="range" id="slider-ocean-op" min="10" max="100" value="85">
+          </div>
+        </div>
+
+        <div class="layer-item-row">
+          <label class="layer-check-label">
+            <span>⚓ Tides (Global &amp; 48h Harmonic)</span>
+            <input type="checkbox" id="chk-layer-tides">
+          </label>
+          <div class="layer-sub-controls">
+            <span>Opacity</span>
+            <input type="range" id="slider-tides-op" min="10" max="100" value="75">
+          </div>
+        </div>
+
+        <div class="layer-item-row">
+          <label class="layer-check-label">
+            <span>🌋 Tectonic Plates &amp; Drift</span>
+            <input type="checkbox" id="chk-layer-plates">
+          </label>
+          <div class="layer-sub-controls">
+            <span>Opacity</span>
+            <input type="range" id="slider-plates-op" min="10" max="100" value="95">
+          </div>
+        </div>
+
+        <!-- SECTION 3: Cartography & Lighting -->
+        <div class="layer-group-title">Base Cartography</div>
+        <div class="layer-item-row">
+          <label class="layer-check-label">
+            <span>🏷️ Country &amp; City Labels</span>
+            <input type="checkbox" id="chk-labels" checked>
+          </label>
+        </div>
+        <div class="layer-item-row">
+          <label class="layer-check-label">
+            <span>☀️ Day/Night Terminator</span>
+            <input type="checkbox" id="chk-lighting" checked>
+          </label>
+        </div>
+
       </div>
     </div>
   </header>
 
-  <!-- Bottom-right stack of 40px round buttons -->
-  <div class="side-stack" role="group" aria-label="Navigation controls">
-    <button id="btn-zoom-in" class="round-btn-40" aria-label="Zoom in (+)" title="Zoom in (+)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-    </button>
-    <button id="btn-zoom-out" class="round-btn-40" aria-label="Zoom out (-)" title="Zoom out (-)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-    </button>
-    <button id="btn-reset-north" class="round-btn-40" aria-label="Reset North" title="Reset North">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <polygon points="12 2 19 21 12 17 5 21 12 2" fill="var(--accent)" stroke="none"/>
-      </svg>
-    </button>
-    <button id="btn-reset-view" class="round-btn-40" aria-label="Reset View" title="Reset View">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"/>
-        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-      </svg>
-    </button>
-  </div>
+  <!-- Toast Message -->
+  <div id="cmd-toast" class="status-toast" role="status" aria-live="polite"></div>
 
-  <!-- Bottom-left Altitude Card -->
-  <div id="altitude-card" class="altitude-card floating-ui" aria-live="polite">
-    <span id="altitude-readout"><strong>19,000 km</strong> &bull; <span class="muted">Planet</span></span>
-  </div>
+  <!-- Collapsible Stacked Legends at Bottom-Left -->
+  <aside id="legends-stack" class="legends-stack" aria-label="Active Layer Legends"></aside>
 
-  <!-- Click Place Info Card -->
-  <aside id="place-card" class="place-card floating-ui" role="dialog" aria-label="Selected Location Info">
-    <div class="place-header">
-      <div id="place-title" class="place-title">Selected Location</div>
-      <button id="place-close" class="place-close" aria-label="Close card (Esc)">&times;</button>
+  <!-- Shared Timeline Dock at Bottom-Center (Only visible when time-enabled layer is active) -->
+  <nav id="shared-timeline-dock" class="shared-timeline-dock floating-ui" aria-label="Shared Timeline Control">
+    <button id="tl-btn-play" class="tl-play-btn" title="Play / Pause Animation">▶</button>
+    <button id="tl-btn-audio" class="tl-play-btn" title="Toggle Sonification Audio" style="font-size:12px; margin-left:-4px;">🔊</button>
+    <input type="range" id="tl-slider" class="tl-slider" aria-label="Timeline scrubber">
+    <div class="tl-info">
+      <span id="tl-readout" class="tl-readout">2025</span>
+      <span id="tl-layer-label" class="tl-layer-label">Heat Map</span>
     </div>
-    <div id="place-coords" class="place-coords">0.0000°, 0.0000°</div>
-    <div id="place-elev" class="place-elev">Loading elevation...</div>
+  </nav>
+
+  <!-- Premium Minimal Comparison Component -->
+  <aside id="inspector-panel" class="inspector-panel" aria-label="Compare locations">
+    <div class="panel-drag-handle"></div>
+
+    <!-- 1. Header -->
+    <header class="cmp-header">
+      <h2 class="cmp-title">Compare locations</h2>
+      <div class="cmp-header-right">
+        <span id="compare-dist" class="cmp-distance-chip" style="display:none;">—</span>
+        <button id="btn-close-inspector" class="cmp-btn-icon-close" aria-label="Close comparison">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M4 4l8 8M12 4l-8 8"/>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Empty State (Shown when no pins) -->
+    <div id="cmp-empty-state" class="cmp-empty-state">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+        <circle cx="12" cy="9" r="2.5"/>
+      </svg>
+      <span>Drop two pins to compare</span>
+    </div>
+
+    <!-- 2. Pin Identity Row -->
+    <div id="cmp-identity-row" class="cmp-identity-row" style="display:none;">
+      <div id="card-pin-a" class="cmp-pin-card target-active-a" role="button" tabindex="0" title="Target Pin A (Left Ear)">
+        <div class="cmp-card-meta">
+          <span class="cmp-dot cmp-dot-a"></span>
+          <span class="cmp-pin-tag tag-a">Pin A</span>
+        </div>
+        <div id="pin-a-name" class="cmp-pin-name">Select location</div>
+        <div id="pin-a-coords" class="cmp-pin-coords">—</div>
+      </div>
+
+      <div id="card-pin-b" class="cmp-pin-card" role="button" tabindex="0" title="Target Pin B (Right Ear)">
+        <div class="cmp-card-meta">
+          <span class="cmp-dot cmp-dot-b"></span>
+          <span class="cmp-pin-tag tag-b">Pin B</span>
+        </div>
+        <div id="pin-b-name" class="cmp-pin-name">Select location</div>
+        <div id="pin-b-coords" class="cmp-pin-coords">—</div>
+      </div>
+    </div>
+
+    <!-- 3. Comparison Table (Main Section) -->
+    <div id="cmp-table-container" class="cmp-table-container" style="display:none;">
+      <div class="cmp-table-header">
+        <span class="cmp-th cmp-th-metric">Metric</span>
+        <span class="cmp-th cmp-th-a">Pin A</span>
+        <span class="cmp-th cmp-th-b">Pin B</span>
+        <span class="cmp-th cmp-th-delta">Δ</span>
+      </div>
+      <div id="cmp-table-body" class="cmp-table-body">
+        <!-- Dynamic metric rows rendered by updateInspectorPanel -->
+      </div>
+    </div>
+
+    <!-- 4. Sound Section (Collapsible, collapsed by default) -->
+    <section id="cmp-sound-section" class="cmp-sound-section" style="display:none;">
+      <button id="btn-toggle-sound-section" class="cmp-sound-toggle" aria-expanded="false">
+        <span>Sonification</span>
+        <svg class="cmp-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 6l4 4 4-4"/>
+        </svg>
+      </button>
+
+      <div id="sound-section-content" class="cmp-sound-content">
+        <!-- 3-option Segmented Control -->
+        <div class="cmp-segmented-control" role="tablist" aria-label="Audio mode">
+          <button id="mode-btn-blend" class="cmp-segment active" role="tab" aria-selected="true">Blend</button>
+          <button id="mode-btn-notes" class="cmp-segment" role="tab" aria-selected="false">Notes</button>
+          <button id="mode-btn-fire" class="cmp-segment" role="tab" aria-selected="false">Heat</button>
+        </div>
+
+        <!-- Compact 2-column mini-table -->
+        <div class="cmp-sound-grid">
+          <div class="cmp-sound-card">
+            <div class="cmp-sound-card-header">
+              <span class="cmp-dot cmp-dot-a"></span>
+              <span>Pin A</span>
+              <span class="cmp-ear">(left)</span>
+            </div>
+            <div id="sound-val-a" class="cmp-sound-val">—</div>
+          </div>
+          <div class="cmp-sound-card">
+            <div class="cmp-sound-card-header">
+              <span class="cmp-dot cmp-dot-b"></span>
+              <span>Pin B</span>
+              <span class="cmp-ear">(right)</span>
+            </div>
+            <div id="sound-val-b" class="cmp-sound-val">—</div>
+          </div>
+        </div>
+
+        <!-- Quiet Insight Line -->
+        <div id="sound-insight" class="cmp-sound-insight">—</div>
+
+        <!-- Acoustic Waveforms Oscilloscope (Frequency Comparison) -->
+        <div class="cmp-waveform-box">
+          <div class="cmp-waveform-header">
+            <span class="cmp-waveform-title">Acoustic Waveforms</span>
+            <span id="cmp-waveform-badge" class="cmp-waveform-badge">Harmonic Superposition</span>
+          </div>
+
+          <!-- Wave 1: Pin A (Pure Pitch / Fundamental Frequency) -->
+          <div class="cmp-wave-item">
+            <div class="cmp-wave-info">
+              <span class="cmp-dot cmp-dot-a"></span>
+              <span class="cmp-wave-lbl tag-a">Pin A</span>
+              <span id="wave-freq-a" class="cmp-wave-freq">—</span>
+            </div>
+            <canvas id="canvas-wave-a" class="cmp-wave-canvas" width="316" height="38"></canvas>
+          </div>
+
+          <!-- Wave 2: Pin B (Pure Pitch / Fundamental Frequency) -->
+          <div class="cmp-wave-item">
+            <div class="cmp-wave-info">
+              <span class="cmp-dot cmp-dot-b"></span>
+              <span class="cmp-wave-lbl tag-b">Pin B</span>
+              <span id="wave-freq-b" class="cmp-wave-freq">—</span>
+            </div>
+            <canvas id="canvas-wave-b" class="cmp-wave-canvas" width="316" height="38"></canvas>
+          </div>
+
+          <!-- Wave 3: Composite Superposition (Combined / Struck Together) -->
+          <div class="cmp-wave-item">
+            <div class="cmp-wave-info">
+              <span class="cmp-wave-dot-combo"></span>
+              <span class="cmp-wave-lbl tag-combo">Combined (A + B Interference)</span>
+              <span id="wave-freq-diff" class="cmp-wave-freq">—</span>
+            </div>
+            <canvas id="canvas-wave-combo" class="cmp-wave-canvas cmp-wave-canvas-combo" width="316" height="48"></canvas>
+          </div>
+        </div>
+
+        <!-- Playback Controls -->
+        <div class="cmp-playback-wrap">
+          <button id="btn-fire-both" class="cmp-btn-primary">
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M4 3l10 5-10 5V3z"/>
+            </svg>
+            <span>Play both</span>
+          </button>
+          <div class="cmp-playback-ghost-row">
+            <button id="btn-fire-solo-a" class="cmp-btn-ghost" title="Play Pin A in left ear">
+              <span class="cmp-dot cmp-dot-a"></span>
+              <span>Play A</span>
+            </button>
+            <button id="btn-fire-solo-b" class="cmp-btn-ghost" title="Play Pin B in right ear">
+              <span class="cmp-dot cmp-dot-b"></span>
+              <span>Play B</span>
+            </button>
+            <button id="btn-fire-loop" class="cmp-btn-ghost cmp-btn-icon" title="Toggle loop" aria-label="Toggle loop">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 6.5A5.5 5.5 0 0 0 3.2 4.5M2 4.5v3h3M2 9.5a5.5 5.5 0 0 0 10.8 2M14 11.5v-3h-3"/>
+              </svg>
+            </button>
+            <button id="btn-fire-stop" class="cmp-btn-stop cmp-btn-icon" title="Stop playback" aria-label="Stop playback" style="display:none;">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor">
+                <rect x="3" y="3" width="10" height="10" rx="1"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Footer Actions -->
+    <footer id="cmp-footer" class="cmp-footer" style="display:none;">
+      <div class="cmp-footer-left">
+        <button id="btn-fly-a" class="cmp-btn-ghost">Fly to A</button>
+        <button id="btn-fly-b" class="cmp-btn-ghost">Fly to B</button>
+      </div>
+      <button id="btn-clear-pins" class="cmp-btn-text">Clear</button>
+    </footer>
   </aside>
 
-  <!-- Notification Toast -->
-  <div id="toast" class="toast" role="alert" aria-atomic="true"></div>
+  <!-- Bottom-Right Navigation Stack -->
+  <nav class="nav-stack" aria-label="Navigation Controls">
+    <button id="btn-zoom-in" class="nav-btn" aria-label="Zoom In" title="Zoom In">+</button>
+    <button id="btn-zoom-out" class="nav-btn" aria-label="Zoom Out" title="Zoom Out">&minus;</button>
+    <button id="btn-compass" class="nav-btn" aria-label="Reset North" title="Reset North">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <polygon points="12 2 16 12 12 10" fill="#ea4335"/>
+        <polygon points="12 22 16 12 12 10" fill="#9aa0a6"/>
+        <polygon points="12 2 8 12 12 10" fill="#d93025"/>
+        <polygon points="12 22 8 12 12 10" fill="#80868b"/>
+      </svg>
+    </button>
+    <button id="btn-reset-view" class="nav-btn" aria-label="Global View" title="Global View">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="2" y1="12" x2="22" y2="12"/>
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+      </svg>
+    </button>
+  </nav>
 
-  <script>
-    // ========================================================================
-    // CONFIGURATION
-    // ========================================================================
-    const ION_TOKEN = ''; // optional free Cesium ion token (ion.cesium.com). If set: Cesium World Terrain + Bing aerial imagery. If empty: token-free Esri imagery and flat terrain.
-    let TERRAIN_EXAGGERATION = 1.3;
+  <!-- ES6 Modular Engine -->
+  <script type="module" src="src/main.js"></script>
 
-    // Verify CesiumJS availability
-    if (typeof Cesium === 'undefined') {
-      document.getElementById('cesium-error').style.display = 'block';
-      throw new Error("CesiumJS is not available.");
-    }
-
-    if (ION_TOKEN) {
-      Cesium.Ion.defaultAccessToken = ION_TOKEN;
-    }
-
-    // ========================================================================
-    // 1) VIEWER INITIALIZATION
-    // ========================================================================
-    const START_DESTINATION = Cesium.Cartesian3.fromDegrees(60, 25, 1.9e7);
-
-    const viewer = new Cesium.Viewer('cesium', {
-      animation: false,
-      timeline: false,
-      geocoder: false,
-      homeButton: false,
-      sceneModePicker: false,
-      baseLayerPicker: false,
-      navigationHelpButton: false,
-      fullscreenButton: false,
-      infoBox: false,
-      selectionIndicator: false,
-      baseLayer: false,
-      terrain: ION_TOKEN ? Cesium.Terrain.fromWorldTerrain() : undefined,
-      requestRenderMode: false
-    });
-
-    const scene = viewer.scene;
-    const globe = scene.globe;
-
-    // Viewport Resolution & Anti-Aliasing
-    viewer.resolutionScale = Math.min(window.devicePixelRatio || 1, 2);
-    if (scene.msaaSamples !== undefined) scene.msaaSamples = 4;
-    if (scene.postProcessStages && scene.postProcessStages.fxaa) {
-      scene.postProcessStages.fxaa.enabled = true;
-    }
-
-    // ========================================================================
-    // 2) IMAGERY LAYERS
-    // ========================================================================
-    let baseLayer = null;
-    let roadsLayer = null;
-    let labelsLayer = null;
-    let baseErrorCount = 0;
-    let hasShownBaseErrorToast = false;
-    let isRoadsEnabled = true;
-
-    async function initImageryLayers() {
-      // 1. Base Layer (Satellite)
-      if (ION_TOKEN) {
-        try {
-          baseLayer = await Cesium.ImageryLayer.fromWorldImagery({
-            style: Cesium.IonWorldImageryStyle.AERIAL
-          });
-          viewer.imageryLayers.add(baseLayer);
-        } catch (e) {
-          console.warn("Ion imagery failed, falling back to Esri:", e);
-        }
-      }
-
-      if (!baseLayer) {
-        const esriProvider = new Cesium.UrlTemplateImageryProvider({
-          url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          maximumLevel: 19,
-          credit: 'Esri, Maxar, Earthstar Geographics'
-        });
-
-        esriProvider.errorEvent.addEventListener(() => {
-          baseErrorCount++;
-          if (baseErrorCount >= 20 && !hasShownBaseErrorToast) {
-            hasShownBaseErrorToast = true;
-            showToast("Satellite imagery could not load.");
-          }
-        });
-
-        baseLayer = new Cesium.ImageryLayer(esriProvider);
-        viewer.imageryLayers.add(baseLayer);
-      }
-
-      baseLayer.saturation = 1.15;
-      baseLayer.brightness = 1.0;
-      globe.baseColor = Cesium.Color.fromCssColorString('#0b1b33');
-
-      // 2. Roads Overlay (shown only when height < 400 km)
-      const roadsProvider = new Cesium.UrlTemplateImageryProvider({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 19
-      });
-      roadsProvider.errorEvent.addEventListener(() => {});
-      roadsLayer = new Cesium.ImageryLayer(roadsProvider);
-      roadsLayer.show = false;
-      viewer.imageryLayers.add(roadsLayer);
-
-      // 3. Labels and Borders Overlay (Always on by default)
-      const labelsProvider = new Cesium.UrlTemplateImageryProvider({
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-        maximumLevel: 19
-      });
-      labelsProvider.errorEvent.addEventListener(() => {});
-      labelsLayer = new Cesium.ImageryLayer(labelsProvider);
-      labelsLayer.alpha = 1.0;
-      labelsLayer.show = true;
-      viewer.imageryLayers.add(labelsLayer);
-    }
-
-    initImageryLayers();
-
-    // ========================================================================
-    // 3) REALISTIC SPACE LOOK & LIGHTING
-    // ========================================================================
-    scene.skyAtmosphere.show = true;
-    globe.showGroundAtmosphere = true;
-    scene.moon.show = false;
-    scene.sun.show = false;
-    scene.backgroundColor = Cesium.Color.BLACK;
-
-    // Day/night shading fixed on Asia, Africa and Europe
-    globe.enableLighting = true;
-    viewer.clock.currentTime = Cesium.JulianDate.fromIso8601('2026-06-21T09:00:00Z');
-    viewer.clock.shouldAnimate = false;
-
-    // Fade lighting out as camera descends below ~3,000 km for even landscape illumination
-    globe.lightingFadeInDistance = 9000000.0;  // 9,000 km
-    globe.lightingFadeOutDistance = 3000000.0; // 3,000 km
-    globe.dynamicAtmosphereLighting = true;
-    globe.dynamicAtmosphereLightingFromSun = true;
-
-    globe.maximumScreenSpaceError = 1.5;
-    globe.tileCacheSize = 300;
-    globe.preloadSiblings = true;
-    globe.depthTestAgainstTerrain = true;
-    scene.verticalExaggeration = TERRAIN_EXAGGERATION;
-
-    // 3D Buildings when Ion Token is set
-    if (ION_TOKEN && typeof Cesium.createOsmBuildingsAsync === 'function') {
-      Cesium.createOsmBuildingsAsync().then(osmBuildings => {
-        scene.primitives.add(osmBuildings);
-        viewer.camera.changed.addEventListener(() => {
-          osmBuildings.show = viewer.camera.positionCartographic.height < 30000; // < 30 km
-        });
-      }).catch(err => console.warn("OSM buildings unavailable:", err));
-    }
-
-    // ========================================================================
-    // 4) CAMERA & NAVIGATION
-    // ========================================================================
-    viewer.camera.setView({ destination: START_DESTINATION });
-
-    const controller = scene.screenSpaceCameraController;
-    controller.minimumZoomDistance = 40;
-    controller.maximumZoomDistance = 4.0e7;
-    controller.inertiaZoom = 0.85;
-    controller.inertiaSpin = 0.9;
-    controller.enableCollisionDetection = true;
-    controller.enableZoom = true;
-
-    // Double-click flies in toward clicked position at 40% height
-    const screenHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
-    screenHandler.setInputAction((click) => {
-      const cartesian = scene.pickPosition(click.position) || viewer.camera.pickEllipsoid(click.position, globe.ellipsoid);
-      if (cartesian) {
-        const carto = Cesium.Cartographic.fromCartesian(cartesian);
-        const curHeight = viewer.camera.positionCartographic.height;
-        viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromRadians(carto.longitude, carto.latitude, curHeight * 0.4),
-          duration: 1.2
-        });
-      }
-    }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
-
-    // Slow auto-rotate when far out (> 12,000 km) and inactive
-    let lastUserAction = Date.now();
-    const markActive = () => { lastUserAction = Date.now(); };
-    scene.canvas.addEventListener('pointerdown', markActive);
-    scene.canvas.addEventListener('wheel', markActive);
-    window.addEventListener('keydown', markActive);
-
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    viewer.clock.onTick.addEventListener(() => {
-      if (prefersReducedMotion) return;
-      const h = viewer.camera.positionCartographic.height;
-      if (h > 1.2e7 && (Date.now() - lastUserAction > 3500)) {
-        viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, 0.00015);
-      }
-    });
-
-    // Altitude readout & roads layer toggle on camera changed
-    viewer.camera.changed.addEventListener(() => {
-      const height = viewer.camera.positionCartographic.height;
-      if (roadsLayer) {
-        roadsLayer.show = isRoadsEnabled && (height < 400000); // 400 km
-      }
-      updateAltitudeCard(height);
-    });
-
-    function updateAltitudeCard(height) {
-      const km = height / 1000;
-      let level = '';
-      if (km > 5000) level = 'Planet';
-      else if (km >= 500) level = 'Continent';
-      else if (km >= 50) level = 'Country';
-      else if (km >= 5) level = 'Region';
-      else if (km >= 0.5) level = 'City';
-      else level = 'Street';
-
-      const formatted = km >= 1 ? `${Math.round(km).toLocaleString()} km` : `${Math.round(height).toLocaleString()} m`;
-      const el = document.getElementById('altitude-readout');
-      if (el) {
-        el.innerHTML = `<strong>${formatted}</strong> &bull; <span class="muted">${level}</span>`;
-      }
-    }
-
-    // ========================================================================
-    // 5) CLICK INSPECTOR & PINS
-    // ========================================================================
-    const pinBuilder = new Cesium.PinBuilder();
-    let pinEntity = null;
-    const nominatimReverseCache = new Map();
-    let lastReverseTime = 0;
-
-    screenHandler.setInputAction(async (click) => {
-      const cartesian = scene.pickPosition(click.position) || viewer.camera.pickEllipsoid(click.position, globe.ellipsoid);
-      if (!cartesian) return;
-
-      const carto = Cesium.Cartographic.fromCartesian(cartesian);
-      const lat = Cesium.Math.toDegrees(carto.latitude);
-      const lon = Cesium.Math.toDegrees(carto.longitude);
-
-      // Add or move teardrop pin (white fill 48px)
-      if (pinEntity) {
-        pinEntity.position = cartesian;
-        pinEntity.show = true;
-      } else {
-        pinEntity = viewer.entities.add({
-          position: cartesian,
-          billboard: {
-            image: pinBuilder.fromColor(Cesium.Color.WHITE, 48),
-            verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
-            heightReference: Cesium.HeightReference.CLAMP_TO_GROUND
-          }
-        });
-      }
-
-      showPlaceCard(lat, lon, carto);
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-
-    async function showPlaceCard(lat, lon, carto) {
-      const card = document.getElementById('place-card');
-      const titleEl = document.getElementById('place-title');
-      const coordsEl = document.getElementById('place-coords');
-      const elevEl = document.getElementById('place-elev');
-
-      coordsEl.textContent = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(4)}°${lon >= 0 ? 'E' : 'W'}`;
-      titleEl.textContent = "Loading place...";
-      elevEl.textContent = "Measuring elevation...";
-      card.style.display = 'block';
-
-      // Reverse geocode place name
-      reverseGeocode(lat, lon).then(name => {
-        titleEl.textContent = name || "Selected Location";
-      });
-
-      // Sample terrain elevation
-      if (ION_TOKEN && viewer.terrainProvider && !(viewer.terrainProvider instanceof Cesium.EllipsoidTerrainProvider)) {
-        try {
-          const sampled = await Cesium.sampleTerrainMostDetailed(viewer.terrainProvider, [carto]);
-          if (sampled && sampled[0] && sampled[0].height !== undefined) {
-            elevEl.textContent = `Elevation: ${Math.round(sampled[0].height)} m`;
-          } else {
-            elevEl.textContent = "Elevation: 0 m";
-          }
-        } catch (e) {
-          elevEl.textContent = "Elevation: 0 m";
-        }
-      } else {
-        elevEl.textContent = "Flat terrain: add a Cesium ion token for elevation";
-      }
-    }
-
-    async function reverseGeocode(lat, lon) {
-      const key = `${lat.toFixed(2)},${lon.toFixed(2)}`;
-      if (nominatimReverseCache.has(key)) return nominatimReverseCache.get(key);
-
-      const now = Date.now();
-      if (now - lastReverseTime < 1000) {
-        await new Promise(r => setTimeout(r, 1000 - (now - lastReverseTime)));
-      }
-      lastReverseTime = Date.now();
-
-      try {
-        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10`;
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        if (res.ok) {
-          const data = await res.json();
-          const place = data.display_name ? data.display_name.split(',').slice(0, 2).join(',') : null;
-          if (place) {
-            nominatimReverseCache.set(key, place);
-            return place;
-          }
-        }
-      } catch (e) {}
-      return null;
-    }
-
-    document.getElementById('place-close').onclick = () => {
-      document.getElementById('place-card').style.display = 'none';
-      if (pinEntity) pinEntity.show = false;
-    };
-
-    // ========================================================================
-    // 6) SEARCH & GEOCODING (Nominatim)
-    // ========================================================================
-    const searchCache = new Map();
-    let lastSearchTime = 0;
-    const searchInput = document.getElementById('search-input');
-    const searchMsg = document.getElementById('search-msg');
-
-    searchInput.addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const query = searchInput.value.trim();
-        if (!query) return;
-
-        if (searchCache.has(query.toLowerCase())) {
-          flyToSearchResult(searchCache.get(query.toLowerCase()));
-          return;
-        }
-
-        const now = Date.now();
-        if (now - lastSearchTime < 1000) {
-          await new Promise(r => setTimeout(r, 1000 - (now - lastSearchTime)));
-        }
-        lastSearchTime = Date.now();
-
-        searchMsg.textContent = "Searching...";
-        searchMsg.style.display = 'block';
-
-        try {
-          const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`;
-          const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-          const data = await res.json();
-
-          if (data && data.length > 0) {
-            searchMsg.style.display = 'none';
-            searchCache.set(query.toLowerCase(), data[0]);
-            flyToSearchResult(data[0]);
-          } else {
-            searchMsg.textContent = "No results";
-            setTimeout(() => { searchMsg.style.display = 'none'; }, 3000);
-          }
-        } catch (err) {
-          searchMsg.textContent = "Search error";
-          setTimeout(() => { searchMsg.style.display = 'none'; }, 3000);
-        }
-      }
-    });
-
-    function flyToSearchResult(result) {
-      if (!result.boundingbox) return;
-      const [s, n, w, e] = result.boundingbox.map(parseFloat);
-      viewer.camera.flyTo({
-        destination: Cesium.Rectangle.fromDegrees(w, s, e, n),
-        duration: 2.5
-      });
-      const lat = parseFloat(result.lat);
-      const lon = parseFloat(result.lon);
-      setTimeout(() => {
-        const cart = Cesium.Cartesian3.fromDegrees(lon, lat);
-        const carto = Cesium.Cartographic.fromDegrees(lon, lat);
-        if (pinEntity) {
-          pinEntity.position = cart;
-          pinEntity.show = true;
-        }
-        showPlaceCard(lat, lon, carto);
-      }, 1500);
-    }
-
-    // ========================================================================
-    // 7) CONTROLS & UI EVENT HANDLERS
-    // ========================================================================
-    // Layers popover toggle
-    const btnLayers = document.getElementById('btn-layers');
-    const layersPopover = document.getElementById('layers-popover');
-    btnLayers.onclick = (e) => {
-      e.stopPropagation();
-      const open = layersPopover.style.display === 'block';
-      layersPopover.style.display = open ? 'none' : 'block';
-      btnLayers.setAttribute('aria-expanded', !open);
-    };
-
-    document.addEventListener('click', (e) => {
-      if (!layersPopover.contains(e.target) && e.target !== btnLayers) {
-        layersPopover.style.display = 'none';
-        btnLayers.setAttribute('aria-expanded', 'false');
-      }
-    });
-
-    // Checkboxes
-    document.getElementById('check-labels').onchange = (e) => {
-      if (labelsLayer) labelsLayer.show = e.target.checked;
-    };
-    document.getElementById('check-roads').onchange = (e) => {
-      isRoadsEnabled = e.target.checked;
-      if (roadsLayer) {
-        const h = viewer.camera.positionCartographic.height;
-        roadsLayer.show = isRoadsEnabled && (h < 400000);
-      }
-    };
-    document.getElementById('check-lighting').onchange = (e) => {
-      globe.enableLighting = e.target.checked;
-    };
-
-    // Terrain exaggeration buttons
-    document.querySelectorAll('.seg-btn').forEach(btn => {
-      btn.onclick = () => {
-        document.querySelectorAll('.seg-btn').forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-checked', 'false');
-        });
-        btn.classList.add('active');
-        btn.setAttribute('aria-checked', 'true');
-        TERRAIN_EXAGGERATION = parseFloat(btn.dataset.exag);
-        scene.verticalExaggeration = TERRAIN_EXAGGERATION;
-      };
-    });
-
-    // Side navigation buttons
-    document.getElementById('btn-zoom-in').onclick = () => {
-      const h = viewer.camera.positionCartographic.height;
-      viewer.camera.zoomIn(h * 0.4);
-    };
-    document.getElementById('btn-zoom-out').onclick = () => {
-      const h = viewer.camera.positionCartographic.height;
-      viewer.camera.zoomOut(h * 0.6);
-    };
-    document.getElementById('btn-reset-north').onclick = () => {
-      const pos = viewer.camera.positionCartographic;
-      viewer.camera.flyTo({
-        destination: Cesium.Cartesian3.fromRadians(pos.longitude, pos.latitude, pos.height),
-        orientation: {
-          heading: 0.0,
-          pitch: Cesium.Math.toRadians(-90),
-          roll: 0.0
-        },
-        duration: 1.0
-      });
-    };
-    document.getElementById('btn-reset-view').onclick = () => {
-      viewer.camera.flyTo({
-        destination: START_DESTINATION,
-        orientation: {
-          heading: 0.0,
-          pitch: Cesium.Math.toRadians(-90),
-          roll: 0.0
-        },
-        duration: 1.5
-      });
-    };
-
-    // Keyboard shortcuts
-    window.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT') return;
-      if (e.key === 'Escape') {
-        layersPopover.style.display = 'none';
-        btnLayers.setAttribute('aria-expanded', 'false');
-        document.getElementById('place-card').style.display = 'none';
-        if (pinEntity) pinEntity.show = false;
-      } else if (e.key === '+' || e.key === '=') {
-        viewer.camera.zoomIn(viewer.camera.positionCartographic.height * 0.35);
-      } else if (e.key === '-' || e.key === '_') {
-        viewer.camera.zoomOut(viewer.camera.positionCartographic.height * 0.5);
-      }
-    });
-
-    // Toast helper
-    let toastTimer = null;
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.style.display = 'block';
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => { t.style.display = 'none'; }, 5000);
-    }
-  </script>
 </body>
 </html>
