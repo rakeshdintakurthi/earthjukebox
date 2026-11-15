@@ -27,7 +27,8 @@ export const store = {
       wind: 0.85,
       ocean_currents: 0.85,
       tides: 0.75,
-      plates: 0.95
+      plates: 0.95,
+      nasa_fires: 0.95
     },
     layerLoading: {},
     layerError: {}

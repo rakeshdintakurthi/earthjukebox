@@ -10,16 +10,18 @@ import { windLayer } from './layers/wind.js';
 import { oceanLayer } from './layers/ocean.js';
 import { tidesLayer } from './layers/tides.js';
 import { platesLayer } from './layers/plates.js';
+import { nasaFiresLayer } from './layers/nasaFires.js';
 import { CommandProcessor } from './commands.js';
 import { sonificationEngine } from './sonification.js';
 
-// Register all 6 layers
+// Register all 7 layers (including real NASA FIRMS Active Wildfires)
 layerRegistry.register(heatLayer);
 layerRegistry.register(rainfallLayer);
 layerRegistry.register(windLayer);
 layerRegistry.register(oceanLayer);
 layerRegistry.register(tidesLayer);
 layerRegistry.register(platesLayer);
+layerRegistry.register(nasaFiresLayer);
 
 // 1. Initialize Cesium 3D Globe
 const START_DESTINATION = Cesium.Cartesian3.fromDegrees(78.9629, 20.5937, 18998000.0);
@@ -245,6 +247,7 @@ const METRIC_ICONS = {
   sst: `<svg class="cmp-metric-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c1.5 0 2-1.5 3-1.5s1.5 1.5 3 1.5 2-1.5 3-1.5 1.5 1.5 3 1.5M2 11c1.5 0 2-1.5 3-1.5s1.5 1.5 3 1.5 2-1.5 3-1.5 1.5 1.5 3 1.5"/></svg>`,
   wind: `<svg class="cmp-metric-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5h7a1.5 1.5 0 0 0 0-3h-.5M2 8.5h10.5a1.5 1.5 0 0 1 0 3h-.5M2.5 11.5h5a1.5 1.5 0 0 0 0-3"/></svg>`,
   rain: `<svg class="cmp-metric-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13 9.5a2.5 2.5 0 0 0-2-3.8 4 4 0 0 0-7.5 1.8A2.5 2.5 0 0 0 4 12.5h8.5a2.5 2.5 0 0 0 .5-3zM5.5 13.5l-.8 1.5M8 13.5l-.8 1.5M10.5 13.5l-.8 1.5"/></svg>`,
+  fire: `<svg class="cmp-metric-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2c-1 3-3 4-3 7a4 4 0 0 0 8 0c0-2-1-3-2-4 0 2-1 3-2 3s-1-2-1-3z"/></svg>`,
   plates: `<svg class="cmp-metric-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 13h12M3 10l3-4 4 3 3-5M7 6v7M10 9v4"/></svg>`,
   tides: `<svg class="cmp-metric-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8c2-4 4-4 6 0s4 4 6 0"/></svg>`,
   default: `<svg class="cmp-metric-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 2"/></svg>`
@@ -702,6 +705,26 @@ function updateInspectorPanel() {
     });
   }
 
+  // Metric: NASA Active Fires (FRP)
+  if (activeOverlays.has('nasa_fires') && nasaFiresLayer) {
+    const fA = pins.A ? nasaFiresLayer.queryNearest(pins.A.lat, pins.A.lon, 250) : null;
+    const fB = pins.B ? nasaFiresLayer.queryNearest(pins.B.lat, pins.B.lon, 250) : null;
+    const frpA = (fA && fA.hasFire) ? fA.frp : 0;
+    const frpB = (fB && fB.hasFire) ? fB.frp : 0;
+    rows.push({
+      icon: METRIC_ICONS.fire,
+      name: 'NASA Fire FRP',
+      unit: 'MW',
+      valA: frpA,
+      valB: frpB,
+      formattedA: frpA > 0 ? frpA.toFixed(1) : 'None',
+      formattedB: frpB > 0 ? frpB.toFixed(1) : 'None',
+      subA: (fA && fA.hasFire) ? `${fA.brightness}K · ${fA.distKm}km (${fA.satellite})` : 'No fire in 250km',
+      subB: (fB && fB.hasFire) ? `${fB.brightness}K · ${fB.distKm}km (${fB.satellite})` : 'No fire in 250km',
+      precision: 1
+    });
+  }
+
   // Render Table Rows
   const tableBody = document.getElementById('cmp-table-body');
   if (tableBody) {
@@ -867,7 +890,16 @@ clickHandler.setInputAction((click) => {
 
   // Sonify clicked coordinate based on active layer
   const isRainLayerActive = (store.state.activeRasterLayer === 'rainfall' || store.state.activeOverlays.has('rainfall'));
-  if (isRainLayerActive && rainfallLayer.isLoaded) {
+  if (store.state.activeOverlays.has('nasa_fires') && nasaFiresLayer.isLoaded) {
+    const fire = nasaFiresLayer.queryNearest(lat, lon, 250);
+    if (fire.hasFire) {
+      const fireTempC = (fire.brightness - 273.15);
+      sonificationEngine.sonifyPoint(lat, lon, fireTempC, fire.frp / 15.0);
+      showToast(`🔥 NASA Wildfire: ${fire.frp} MW (FRP) · ${fire.brightness} K (${fire.distKm} km away)`);
+    } else {
+      showToast('🔥 NASA FIRMS: No active wildfire within 250 km');
+    }
+  } else if (isRainLayerActive && rainfallLayer.isLoaded) {
     const mm = rainfallLayer.query(lat, lon, store.state.month || 7);
     sonificationEngine.sonifyRainPoint(lat, lon, mm).then(res => {
       if (res && res.isDry) {
@@ -942,6 +974,8 @@ function syncLayersMenuUI(state) {
     const el = document.getElementById(`chk-layer-${id}`);
     if (el) el.checked = state.activeOverlays.has(id);
   });
+  const firesChk = document.getElementById('chk-layer-nasa-fires');
+  if (firesChk) firesChk.checked = state.activeOverlays.has('nasa_fires');
 }
 
 store.subscribe(async (state, changedKeys) => {
@@ -1344,6 +1378,13 @@ function initUI() {
   });
   bindSlider('slider-plates-op', (val) => store.setOpacity('plates', val));
 
+  // 7. NASA Active Wildfires (FIRMS)
+  bindToggle('chk-layer-nasa-fires', (chk) => {
+    store.toggleOverlay('nasa_fires', chk);
+    if (chk) showToast('NASA Active Wildfires (FIRMS MODIS) active');
+  });
+  bindSlider('slider-nasa-fires-op', (val) => store.setOpacity('nasa_fires', val));
+
   // Labels & Atmosphere toggles
   bindToggle('chk-labels', (chk) => { if (labelsLayer) labelsLayer.show = chk; });
   bindToggle('chk-lighting', (chk) => { globe.enableLighting = chk; });
@@ -1354,7 +1395,7 @@ function initUI() {
     brandReset.onclick = () => {
       store.resetAllLayers();
       // Uncheck UI boxes
-      ['chk-layer-heat', 'chk-layer-rainfall', 'chk-layer-wind', 'chk-layer-ocean', 'chk-layer-tides', 'chk-layer-plates'].forEach(id => {
+      ['chk-layer-heat', 'chk-layer-rainfall', 'chk-layer-wind', 'chk-layer-ocean', 'chk-layer-tides', 'chk-layer-plates', 'chk-layer-nasa-fires'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.checked = false;
       });

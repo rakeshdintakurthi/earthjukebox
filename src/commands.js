@@ -105,6 +105,9 @@ export class CommandProcessor {
     if (text.includes('hide plate') || text.includes('remove plate')) {
       return { action: 'DISABLE_LAYER', layer: 'plates' };
     }
+    if (text.includes('hide fire') || text.includes('remove fire') || text.includes('hide wildfire')) {
+      return { action: 'DISABLE_LAYER', layer: 'nasa_fires' };
+    }
 
     // 3. Multi-layer compound commands: "add wind and ocean currents"
     const hasWind = text.includes('wind');
@@ -113,6 +116,7 @@ export class CommandProcessor {
     const hasRain = text.includes('rain') || text.includes('precipitation');
     const hasPlates = text.includes('plate') || text.includes('tectonic');
     const hasTides = text.includes('tide');
+    const hasNasaFires = text.includes('fire') || text.includes('wildfire') || text.includes('firms');
 
     // Extract potential year (1850 to 2025)
     let year = null;
@@ -144,6 +148,7 @@ export class CommandProcessor {
     if (hasOcean) return { action: 'ENABLE_LAYER', layer: 'ocean' };
     if (hasTides) return { action: 'ENABLE_LAYER', layer: 'tides', location: locationQuery };
     if (hasPlates) return { action: 'ENABLE_LAYER', layer: 'plates' };
+    if (hasNasaFires) return { action: 'ENABLE_LAYER', layer: 'nasa_fires' };
 
     // Geocoding place search
     return { action: 'SEARCH_LOCATION', query: raw };

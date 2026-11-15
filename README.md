@@ -76,6 +76,7 @@ Visualizes acoustic waveforms in real time with high-DPI canvas rendering:
 | **Ocean SST** | Overlay/Raster| °C & m/s | NASA OSCAR & NOAA OISST v2.1 | [PO.DAAC](https://podaac.jpl.nasa.gov/) |
 | **Tides** | Overlay | Meters (M2 Amplitude)| CNES/LEGOS FES2014 & TPXO9 | [AVISO+](https://www.aviso.altimetry.fr/) |
 | **Tectonic Plates**| Vector | mm/yr (MORVEL) | Peter Bird (PB2002) GeoJSON | [PB2002](https://github.com/fraxen/tectonicplates) |
+| **Active Wildfires** | Overlay | MW (FRP) & Kelvin | NASA EOSDIS FIRMS (MODIS C6.1 NRT) | [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/) |
 
 ---
 
