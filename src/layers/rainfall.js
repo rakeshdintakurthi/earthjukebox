@@ -4,7 +4,7 @@
 
 export const rainfallLayer = {
   id: 'rainfall',
-  label: '🌧️ Rainfall & Precipitation',
+  label: '🌧️ Rainfall (NASA GPM / GPCP)',
   type: 'raster',
   defaultOpacity: 0.60,
   timeline: true,

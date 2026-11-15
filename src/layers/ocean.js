@@ -4,7 +4,7 @@
 
 export const oceanLayer = {
   id: 'ocean',
-  label: '🌊 Ocean Currents & SST',
+  label: '🌊 Ocean Currents (NASA OSCAR / SST)',
   type: 'overlay', // has currents overlay + sst raster sub-layer
   defaultOpacity: 0.85,
   timeline: false,

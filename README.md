@@ -17,16 +17,108 @@ An interactive, scientifically grounded 3D planetary climate globe built with **
 
 ## 🛰️ Real NASA Datasets Integrated
 
-The application integrates real satellite and Earth observation datasets directly from **NASA EOSDIS** (Earth Observing System Data and Information System) and official NASA science missions:
+The application integrates real satellite and Earth observation datasets directly from **NASA EOSDIS** (Earth Observing System Data and Information System) and official NASA science missions.
 
-| Entry | Resource / Link Text | Link URL | Purpose in Project |
+### 📋 NASA Space Apps Challenge — Submission Form Inputs
+
+Below are the exact values formatted for the **NASA Space Apps Challenge project submission form** under the **"NASA Data *"** section (requiring **Link Text** and **Link URL**):
+
+---
+
+#### **Entry 1**
+* **NASA resource tag:** `NASA resource`
+* **Link Text:**
+  ```text
+  NASA GPM - IMERG Precipitation Data
+  ```
+* **Link URL:**
+  ```text
+  https://gpm.nasa.gov/data/imerg
+  ```
+* **Description / Usage:** Used for global precipitation/rainfall data and real-time precipitation acoustic sonification.
+
+---
+
+#### **Entry 2**
+* **NASA resource tag:** `NASA resource`
+* **Link Text:**
+  ```text
+  NASA OSCAR - Ocean Surface Currents
+  ```
+* **Link URL:**
+  ```text
+  https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0
+  ```
+* **Description / Usage:** Used for ocean surface current data, circulation vector fields, and sea surface temperature analysis.
+
+---
+
+#### **Entry 3**
+* **NASA resource tag:** `NASA resource`
+* **Link Text:**
+  ```text
+  NASA Global Precipitation Climatology Project (GPCP)
+  ```
+* **Link URL:**
+  ```text
+  https://www.nccs.nasa.gov/gpcp/
+  ```
+* **Description / Usage:** Used for global precipitation climatology and monthly historical precipitation reference grids.
+
+---
+
+#### **Entry 4**
+* **NASA resource tag:** `NASA resource`
+* **Link Text:**
+  ```text
+  NASA EOSDIS FIRMS - Active Fire Data
+  ```
+* **Link URL:**
+  ```text
+  https://firms.modaps.eosdis.nasa.gov/active_fire/
+  ```
+* **Description / Usage:** Used for 24-hour real-time global active wildfire detections (MODIS C6.1 NRT) with Fire Radiative Power (MW) and acoustic combustion sonification.
+
+---
+
+#### **Entry 5**
+* **NASA resource tag:** `NASA resource`
+* **Link Text:**
+  ```text
+  NASA GISS Surface Temperature Analysis (GISTEMP v4)
+  ```
+* **Link URL:**
+  ```text
+  https://data.giss.nasa.gov/gistemp/
+  ```
+* **Description / Usage:** Used for global surface temperature anomalies and historical climate harmonic sonification.
+
+---
+
+#### **Entry 6**
+* **NASA resource tag:** `NASA resource`
+* **Link Text:**
+  ```text
+  NASA Visible Earth - Blue Marble Next Generation
+  ```
+* **Link URL:**
+  ```text
+  https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation
+  ```
+* **Description / Usage:** Used for base photorealistic planetary surface and cloud cartography on the 3D globe.
+
+---
+
+### 📊 NASA Dataset Master Summary
+
+| Entry | Link Text | Link URL | Purpose in Project |
 | :--- | :--- | :--- | :--- |
-| **Entry 1** | **NASA GPM – IMERG Precipitation Data** | [`https://gpm.nasa.gov/data/imerg`](https://gpm.nasa.gov/data/imerg) | Powers the real-time rainfall layer and binaural rain sound sonification |
-| **Entry 2** | **NASA OSCAR – Ocean Surface Currents** | [`https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0`](https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0) | Powers the 3D ocean surface current vectors and sea surface temperature analysis |
+| **Entry 1** | **NASA GPM - IMERG Precipitation Data** | [`https://gpm.nasa.gov/data/imerg`](https://gpm.nasa.gov/data/imerg) | Powers the real-time rainfall layer and binaural rain sound sonification |
+| **Entry 2** | **NASA OSCAR - Ocean Surface Currents** | [`https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0`](https://podaac.jpl.nasa.gov/dataset/OSCAR_L4_OC_NRT_V2.0) | Powers the 3D ocean surface current vectors and sea surface temperature analysis |
 | **Entry 3** | **NASA Global Precipitation Climatology Project (GPCP)** | [`https://www.nccs.nasa.gov/gpcp/`](https://www.nccs.nasa.gov/gpcp/) | High-resolution monthly global precipitation baseline grids |
-| **Entry 4** | **NASA EOSDIS FIRMS Active Wildfires (MODIS C6.1 NRT)** | [`https://firms.modaps.eosdis.nasa.gov/active_fire/`](https://firms.modaps.eosdis.nasa.gov/active_fire/) | Real-time global active wildfire layer (13,900+ hotspots) with Fire Radiative Power (MW) and combustion audio |
+| **Entry 4** | **NASA EOSDIS FIRMS - Active Fire Data** | [`https://firms.modaps.eosdis.nasa.gov/active_fire/`](https://firms.modaps.eosdis.nasa.gov/active_fire/) | Real-time global active wildfire layer (13,900+ hotspots) with Fire Radiative Power (MW) and combustion audio |
 | **Entry 5** | **NASA GISS Surface Temperature Analysis (GISTEMP v4)** | [`https://data.giss.nasa.gov/gistemp/`](https://data.giss.nasa.gov/gistemp/) | Long-term historical surface temperature anomalies and musical harmonic chime mappings |
-| **Entry 6** | **NASA Visible Earth – Blue Marble Next Generation** | [`https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation`](https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation) | Base photorealistic planetary surface and cloud imagery on the 3D Cesium globe |
+| **Entry 6** | **NASA Visible Earth - Blue Marble Next Generation** | [`https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation`](https://visibleearth.nasa.gov/images/73909/december-blue-marble-next-generation) | Base photorealistic planetary surface and cloud imagery on the 3D Cesium globe |
 
 ---
 
