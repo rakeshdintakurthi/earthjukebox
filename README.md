@@ -199,6 +199,27 @@ Transforms planetary climate parameters into authentic spatial audio via the Web
   - **Right Ear Only**: Audition Pin B exclusively.
   - **Compare Both (L + R)**: Instantaneous spatial comparison. Placing Pin A in the Indian monsoon and Pin B in the Sahara immediately outputs heavy rain in the left ear and total silence in the right ear.
 
+### 3. Two-Sided Compare HUD (Pin A vs Pin B)
+A floating, zero-occlusion dual comparison HUD designed for side-by-side planetary analysis without blocking the 3D globe:
+- **Left Card (Pin A - Cyan `#22d3ee`)**: Appears immediately upon selecting Location A on Earth.
+- **Right Card (Pin B - Amber `#fbbf24`)**: Appears immediately upon selecting Location B on Earth.
+- **Interactive Globe Pass-Through**: The center ~50% of the viewport remains completely interactive, allowing full dragging, rotation, zooming, and tilting of the Cesium globe between the cards.
+- **Each Comparison Card Includes**:
+  1. *Location Name & Coordinates* (reverse-geocoded header).
+  2. *High-Resolution Satellite Thumbnail* (Esri World Imagery tile at zoom ~5 centered on pin).
+  3. *2x2 Climate Metrics Grid*: Temperature (°C), Humidity (%), Rainfall (mm), and Vegetation Index (NDVI 0–1).
+  4. *Dual Mini Sparklines*: Historical temperature progression (1850–Selected Year) and vegetation/rainfall trends.
+  5. *12-Month Climatology Bar Chart*: Monthly profile across all 12 calendar months.
+  6. *Waveform & Pitch Readout*: Synthesized frequency tone and musical note (e.g. `262 Hz · C4`).
+- **Top Center Delta Strip**: Real-time delta comparison between both pins (`ΔT`, `ΔHumidity`, `ΔRain`, `ΔNDVI`) with directional indicators (`▲`/`▼`) and climate heat-tinted badges.
+- **Bottom Sonification & Flight Bar**:
+  - `▶ Play A`: Auditions Location A acoustics in the left ear.
+  - `▶ Play both`: Spatial binaural comparison in stereo.
+  - `▶ Play B`: Auditions Location B acoustics in the right ear.
+  - `Fly to A` / `Fly to B`: Smooth cinematic camera transitions directly to each location.
+  - `Audio Mode ▴`: Upward-expanding sonification drawer toggling between **Blend**, **Notes**, and **Heat (Combustion)** synthesis modes.
+  - `Clear` / `[✕]` / `ESC`: Resets dropped pins and hides comparison HUD.
+
 ### 4. Real-Time Acoustic Waveform Oscilloscope
 Visualizes acoustic waveforms in real time with high-DPI canvas rendering:
 - **Pin A Waveform**: Pure pitch and droplet velocity for Pin A. Flat baseline indicates silence on dry land.

@@ -13,6 +13,8 @@ import { platesLayer } from './layers/plates.js';
 import { nasaFiresLayer } from './layers/nasaFires.js';
 import { CommandProcessor } from './commands.js';
 import { sonificationEngine } from './sonification.js';
+import { ComparisonPanelManager } from './comparisonPanel.js';
+import { CompareHUD } from './compareHUD.js';
 
 // Register all 7 layers (including real NASA FIRMS Active Wildfires)
 layerRegistry.register(heatLayer);
@@ -104,6 +106,7 @@ export function showToast(text) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 3200);
 }
+window.showToast = showToast;
 
 // 2. Command Processor
 const cmdProcessor = new CommandProcessor(viewer, showToast);
@@ -120,6 +123,14 @@ function clearAllPinEntities() {
   const panel = document.getElementById('inspector-panel');
   if (panel) panel.style.display = 'none';
 }
+window.clearAllPinEntities = clearAllPinEntities;
+
+// Redesigned Floating Left Comparison Panel Manager (legacy kept without deletion)
+export const comparisonPanelManager = new ComparisonPanelManager(viewer, heatLayer, rainfallLayer);
+
+// New CompareHUD Component (Phase 1)
+export const compareHUD = new CompareHUD(viewer, heatLayer, rainfallLayer);
+window.compareHUD = compareHUD;
 
 function sampleActiveLayersAt(lat, lon) {
   const values = {};
@@ -493,7 +504,39 @@ class AcousticWaveformVisualizer {
 
 let waveVisualizer = null;
 
+function updateLineBetweenPins() {
+  const { pins } = store.state;
+  if (pins.A && pins.B) {
+    if (arcEntity) {
+      arcEntity.polyline.positions = [pins.A.cartesian, pins.B.cartesian];
+      arcEntity.show = true;
+    } else {
+      arcEntity = viewer.entities.add({
+        polyline: {
+          positions: [pins.A.cartesian, pins.B.cartesian],
+          width: 3.5,
+          arcType: Cesium.ArcType.GEODESIC,
+          material: new Cesium.PolylineGlowMaterialProperty({
+            glowPower: 0.35,
+            color: Cesium.Color.fromCssColorString('#8ab4f8')
+          })
+        }
+      });
+    }
+  } else {
+    if (arcEntity) arcEntity.show = false;
+  }
+}
+
 function updateInspectorPanel() {
+  updateLineBetweenPins();
+  if (window.compareHUD) {
+    window.compareHUD.updateFromPins(store.state.pins);
+  }
+  if (comparisonPanelManager) {
+    comparisonPanelManager.update();
+    return;
+  }
   const { pins, activeRasterLayer, activeOverlays, year, month } = store.state;
   const panel = document.getElementById('inspector-panel');
   if (!panel) return;
@@ -1230,16 +1273,20 @@ function togglePlay(start) {
   isPlaying = (start !== undefined) ? start : !isPlaying;
 
   if (isPlaying) {
-    playBtn.innerHTML = '⏸';
+    if (playBtn) playBtn.innerHTML = '⏸';
     playInterval = setInterval(() => {
       const slider = document.getElementById('tl-slider');
-      let next = parseFloat(slider.value) + parseFloat(slider.step);
-      if (next > parseFloat(slider.max)) next = parseFloat(slider.min);
+      if (!slider) return;
+      const step = parseFloat(slider.step) || 1;
+      const min = parseFloat(slider.min) || 1850;
+      const max = parseFloat(slider.max) || 2025;
+      let next = (parseFloat(slider.value) || min) + step;
+      if (next > max) next = min;
       slider.value = next;
       handleTimelineInput(next);
     }, 450);
   } else {
-    playBtn.innerHTML = '▶';
+    if (playBtn) playBtn.innerHTML = '▶';
     clearInterval(playInterval);
   }
 }
@@ -1414,9 +1461,15 @@ function initUI() {
   const btnPin = document.getElementById('btn-pin-tool');
   if (btnPin) {
     btnPin.onclick = () => {
-      store.state.pinToolActive = !store.state.pinToolActive;
-      btnPin.classList.toggle('active', store.state.pinToolActive);
-      showToast(store.state.pinToolActive ? 'Pin mode: Click Earth to place Pin A and Pin B' : 'Pin mode off');
+      const nextActive = !store.state.pinToolActive;
+      store.setPinToolActive(nextActive);
+      btnPin.classList.toggle('active', nextActive);
+      if (!nextActive && window.compareHUD) {
+        window.compareHUD.toggleVisibility(false);
+      } else if (nextActive && window.compareHUD) {
+        window.compareHUD.updateFromPins(store.state.pins);
+      }
+      showToast(nextActive ? 'Pin mode: Click Earth to place Pin A and Pin B' : 'Pin mode off');
     };
   }
 

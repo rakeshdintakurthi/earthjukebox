@@ -125,6 +125,11 @@ export const store = {
     this.notify(['pins']);
   },
 
+  setPinToolActive(active) {
+    this.state.pinToolActive = Boolean(active);
+    this.notify(['pinToolActive']);
+  },
+
   clearPins() {
     this.state.pins.A = null;
     this.state.pins.B = null;
