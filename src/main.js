@@ -41,11 +41,19 @@ const viewer = new Cesium.Viewer('cesium', {
   navigationHelpButton: false,
   scene3DOnly: true,
   creditContainer: document.createElement('div'),
-  orderIndependentTranslucency: true
+  orderIndependentTranslucency: false // Optimized: avoids heavy multi-pass depth-peeling shaders on GPU
 });
 
 const scene = viewer.scene;
 const globe = scene.globe;
+
+// High-performance rendering & streaming configuration
+viewer.resolutionScale = Math.min(window.devicePixelRatio || 1.0, 1.25);
+viewer.targetFrameRate = 60;
+globe.maximumScreenSpaceError = 2.5; // Balances sharp satellite imagery with fast, stutter-free streaming
+globe.tileCacheSize = 100;
+globe.loadingDescendantLimit = 15;
+globe.preloadSiblings = true;
 
 // Photorealistic atmospheric settings
 globe.enableLighting = true;
@@ -383,17 +391,19 @@ class AcousticWaveformVisualizer {
 
   start() {
     const loop = (currentTime) => {
-      const dt = Math.min((currentTime - this.lastTime) / 1000, 0.1);
-      this.lastTime = currentTime;
+      // Performance optimization: only compute and render if canvas is in the visible DOM
+      if (this.canvasCombo && this.canvasCombo.offsetParent !== null) {
+        const dt = Math.min((currentTime - this.lastTime) / 1000, 0.1);
+        this.lastTime = currentTime;
 
-      const speedMultiplier = this.isPlaying ? 4.5 : 1.2;
-      this.phaseA += (2.0 + (this.freqA ? this.freqA * 0.008 : 0)) * speedMultiplier * dt;
-      this.phaseB += (2.0 + (this.freqB ? this.freqB * 0.008 : 0)) * speedMultiplier * dt;
+        const speedMultiplier = this.isPlaying ? 4.5 : 1.2;
+        this.phaseA += (2.0 + (this.freqA ? this.freqA * 0.008 : 0)) * speedMultiplier * dt;
+        this.phaseB += (2.0 + (this.freqB ? this.freqB * 0.008 : 0)) * speedMultiplier * dt;
 
-      this.renderCanvas(this.canvasA, this.freqA, '#4CC9F0', this.phaseA, this.gainA);
-      this.renderCanvas(this.canvasB, this.freqB, '#F5B94A', this.phaseB, this.gainB);
-      this.renderComboCanvas(this.canvasCombo);
-
+        this.renderCanvas(this.canvasA, this.freqA, '#4CC9F0', this.phaseA, this.gainA);
+        this.renderCanvas(this.canvasB, this.freqB, '#F5B94A', this.phaseB, this.gainB);
+        this.renderComboCanvas(this.canvasCombo);
+      }
       requestAnimationFrame(loop);
     };
     requestAnimationFrame(loop);
@@ -1726,8 +1736,9 @@ function initUI() {
   if (btnSonify) btnSonify.onclick = toggleSonification;
   if (tlAudioBtn) tlAudioBtn.onclick = toggleSonification;
 
-  // Real-time audio wave visualizer animation
+  // Real-time audio wave visualizer animation (optimized: only loops when playing)
   const freqData = new Uint8Array(32);
+  let visualizerActive = false;
   function animateVisualizer() {
     if (sonificationEngine.isPlaying && visualizerBars.length > 0) {
       sonificationEngine.getVisualizerData(freqData);
@@ -1736,17 +1747,25 @@ function initUI() {
         const h = Math.max(3, Math.min(14, (val / 255) * 14));
         visualizerBars[i].style.height = `${h}px`;
       }
-    } else if (visualizerBars.length > 0) {
+      visualizerActive = true;
+      requestAnimationFrame(animateVisualizer);
+    } else if (visualizerActive && visualizerBars.length > 0) {
       for (let i = 0; i < visualizerBars.length; i++) {
         visualizerBars[i].style.height = '3px';
       }
-    }
-    if (typeof requestAnimationFrame === 'function') {
-      requestAnimationFrame(animateVisualizer);
+      visualizerActive = false;
     }
   }
-  if (typeof requestAnimationFrame === 'function') {
-    animateVisualizer();
+
+  // Hook into sonification state notifications
+  if (sonificationEngine) {
+    const origNotify = sonificationEngine.notifyState.bind(sonificationEngine);
+    sonificationEngine.notifyState = function() {
+      origNotify();
+      if (sonificationEngine.isPlaying && !visualizerActive) {
+        animateVisualizer();
+      }
+    };
   }
 
   // Navigation stack

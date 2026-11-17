@@ -715,6 +715,12 @@ export class ComparisonPanelManager {
     let phase = 0;
 
     const render = () => {
+      // Performance optimization: skip canvas draws if panel is hidden
+      if (!this.panelEl || this.panelEl.style.display === 'none' || this.panelEl.offsetParent === null) {
+        this.animFrameId = requestAnimationFrame(render);
+        return;
+      }
+
       phase += 0.05;
 
       const analyser = sonificationEngine ? sonificationEngine.analyserNode : null;

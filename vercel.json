@@ -1,7 +1,6 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "buildCommand": null,
   "outputDirectory": ".",
   "routes": [
     { "src": "^/earth$", "dest": "/index.html" },
@@ -15,16 +14,30 @@
       ]
     },
     {
+      "source": "/(.*)\\.(jpg|jpeg|png|webp|svg|ico)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(js|css)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
       "source": "/(.*)\\.mp3",
       "headers": [
         { "key": "Content-Type", "value": "audio/mpeg" },
-        { "key": "Accept-Ranges", "value": "bytes" }
+        { "key": "Accept-Ranges", "value": "bytes" },
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
       "source": "/(.*)\\.json",
       "headers": [
-        { "key": "Content-Type", "value": "application/json" }
+        { "key": "Content-Type", "value": "application/json" },
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
       ]
     }
   ]
